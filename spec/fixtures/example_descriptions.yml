@@ -1,0 +1,20 @@
+# Examples used to sanity-check ConditionHeuristic against the shipped
+# default keyword list, and to document what this cop flags. "bad" entries
+# describe a condition that belongs in a surrounding `context` block;
+# "good" entries describe only the action or the expected outcome.
+bad:
+  - ユーザーが管理者権限を持っている場合、削除できる
+  - 未ログインのとき、ログイン画面にリダイレクトされる
+  - 在庫がない際は購入ボタンが非表示になる
+  - when the user is an admin, allows deletion
+  - if the record is missing, raises an error
+  - shows a warning in case the disk is nearly full
+good:
+  - 削除できる
+  - ログイン画面にリダイレクトされる
+  - 購入ボタンが非表示になる
+  - allows deletion
+  - raises an error
+  - shows a warning about disk usage
+  - ときめきを覚える
+  - ひとときの休息を得る

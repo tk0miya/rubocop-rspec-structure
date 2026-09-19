@@ -1,0 +1,123 @@
+# Generated from lib/rubocop/cop/rspec_structure/condition_in_example.rb with RBS::Inline
+
+module RuboCop
+  module Cop
+    module RSpecStructure
+      # Checks that an example description does not contain an execution
+      # condition (`〜の場合`, `〜のとき`, `when ...`) that belongs in a
+      # surrounding `context` block instead.
+      #
+      # A keyword check runs first and is always on, at no cost. When it
+      # finds nothing and a TypeSafe API key (`TYPESAFE_API_KEY`) is set,
+      # the description is also judged semantically by Jev (TypeSafe's
+      # System One model), which can catch paraphrased conditions the
+      # keyword list misses. Without an API key, only the keyword check
+      # runs — the presence of the API key is the only switch between the
+      # two.
+      #
+      # @example
+      #   # bad
+      #   it "ユーザーが管理者権限を持っている場合、削除できる" do
+      #   end
+      #
+      #   # good
+      #   context "ユーザーが管理者権限を持っている場合" do
+      #     it "削除できる" do
+      #     end
+      #   end
+      class ConditionInExample < Base
+        include RuboCop::RSpec::Language
+
+        MSG: ::String
+
+        MSG_WITH_PROBABILITY: ::String
+
+        JEV_INSTRUCTIONS: ::String
+
+        # Distinguishes a branching condition on a property of the INPUT (true) from a
+        # clause that merely elaborates on the OUTCOME itself (false), even when neither
+        # uses an explicit when/if/の場合 token.
+        JEV_CRITERIA: untyped
+
+        # Used when `rubocop-rspec`'s own default config (which defines the
+        # `it`/`specify`/`example` DSL aliases) has not been merged, e.g.
+        # because a project lists only this gem under `plugins:`.
+        DEFAULT_LANGUAGE_CONFIG: untyped
+
+        @type_safe_client: untyped
+
+        @heuristic: RuboCop::RSpec::Structure::ConditionHeuristic
+
+        def on_new_investigation: () -> void
+
+        # @rbs node: RuboCop::AST::BlockNode
+        def on_block: (RuboCop::AST::BlockNode node) -> void
+
+        private
+
+        # @rbs block_node: RuboCop::AST::BlockNode
+        # @rbs description_node: RuboCop::AST::StrNode
+        # @rbs text: String
+        def check: (RuboCop::AST::BlockNode block_node, RuboCop::AST::StrNode description_node, String text) -> void
+
+        # @rbs node: RuboCop::AST::Node
+        def out_of_scope?: (RuboCop::AST::Node node) -> bool
+
+        def heuristic: () -> RuboCop::RSpec::Structure::ConditionHeuristic
+
+        # @rbs text: String
+        def jev_probability: (String text) -> Float?
+
+        # @rbs error: StandardError
+        def handle_jev_error: (StandardError error) -> void
+
+        # @rbs api_key: String
+        def type_safe_client: (String api_key) -> untyped
+
+        # @rbs api_key: String
+        def build_type_safe_client: (String api_key) -> untyped
+
+        def type_safe_api_key: () -> String?
+
+        def check_scope: () -> String
+
+        def diff_scope: () -> RuboCop::RSpec::Structure::GitDiffScope
+
+        def diff_base: () -> String
+
+        # Used to build both the Client (its model param) and the Cache
+        # wrapping it (part of its cache key), so it earns a name instead
+        # of two identical `cop_config.fetch` calls.
+        def model: () -> String
+
+        def cache_path: () -> String
+
+        # A Jev judgment is a pure function of (description, prompt, model), so it is
+        # equally valid for every project on this machine, not just the current one.
+        # Following the XDG Base Directory Specification (rather than a path under
+        # this project) lets that cache be shared across all of them.
+        def default_cache_path: () -> String
+
+        # Falls back to a project-relative path when the home directory can't be
+        # resolved at all, e.g. a minimal container running as an arbitrary UID
+        # with no matching passwd entry.
+        def cache_home: () -> String
+
+        # Dir.home consults $HOME first, then falls back to the OS user database
+        # (e.g. /etc/passwd), which is more robust than reading ENV["HOME"] alone.
+        # It raises ArgumentError when neither resolves.
+        def user_home: () -> String?
+
+        # A config value that can also be overridden by an environment variable,
+        # which always wins when set. `cop_config[config_key]` (rather than
+        # `#fetch`) also falls back to `default` when a project's `.rubocop.yml`
+        # sets the key to an explicit nil, since RuboCop's config merging only
+        # drops a nil override when the department default also declares the key.
+        # @rbs env_var: String
+        # @rbs config_key: String
+        # @rbs default: untyped
+        def env_or_config: (String env_var, String config_key, untyped default) -> untyped
+      end
+    end
+  end
+end

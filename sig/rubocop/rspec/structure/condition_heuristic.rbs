@@ -1,0 +1,41 @@
+# Generated from lib/rubocop/rspec/structure/condition_heuristic.rb with RBS::Inline
+
+module RuboCop
+  module RSpec
+    module Structure
+      # Regex-based first pass over an example description: does it contain
+      # a word or phrase (`の場合`, `when`, ...) that usually signals a
+      # condition which belongs in a surrounding `context` instead of the
+      # example itself? Always run before falling back to TypeSafe, since
+      # it is free and catches the common, unambiguous cases.
+      class ConditionHeuristic
+        # A kanji directly before a keyword means it's the tail of some
+        # other, unrelated compound word (実際, 国際, 手際, ...) rather than
+        # a condition clause boundary — a real one is always preceded by a
+        # particle or a verb/adjective ending, i.e. kana, not another
+        # kanji. Range covers CJK Unified Ideographs + Extension A.
+        UNICODE_KANJI_RANGE: ::String
+
+        # @rbs keywords: Array[String]
+        def initialize: (keywords: Array[String]) -> void
+
+        # @rbs description: String
+        def condition?: (String description) -> bool
+
+        private
+
+        attr_reader pattern: Regexp
+
+        # @rbs keywords: Array[String]
+        def build_pattern: (Array[String] keywords) -> Regexp
+
+        # ASCII keywords (e.g. "when") need a word boundary so they don't
+        # match inside unrelated words; Japanese keywords instead reject a
+        # kanji immediately before them, for the same reason (see
+        # `UNICODE_KANJI_RANGE`).
+        # @rbs keyword: String
+        def pattern_for: (String keyword) -> Regexp
+      end
+    end
+  end
+end

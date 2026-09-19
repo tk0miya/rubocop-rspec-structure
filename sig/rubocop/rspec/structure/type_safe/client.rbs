@@ -1,0 +1,65 @@
+# Generated from lib/rubocop/rspec/structure/type_safe/client.rb with RBS::Inline
+
+module RuboCop
+  module RSpec
+    module Structure
+      module TypeSafe
+        # Thin HTTP client for TypeSafe AI's System One API
+        # (https://docs.typesafe.ai). Sends a single Noul (yes/no) question
+        # and returns the probability that the answer is yes.
+        #
+        # Deliberately built on Net::HTTP rather than a third-party HTTP gem:
+        # this gem is loaded into every consumer's Gemfile, and pulling in
+        # e.g. Faraday risks colliding with a version the consumer already
+        # pins. A single JSON endpoint does not need more than the stdlib.
+        class Client
+          ENDPOINT: untyped
+
+          QUESTION_KEY: ::String
+
+          class TimeoutError < Error
+          end
+
+          class RequestError < Error
+          end
+
+          # @rbs api_key: String
+          # @rbs model: String
+          # @rbs timeout: Integer
+          def initialize: (api_key: String, model: String, timeout: Integer) -> void
+
+          # @rbs state: String
+          # @rbs instructions: String
+          # @rbs criteria: Hash[String, String]?
+          def noul: (state: String, instructions: String, ?criteria: Hash[String, String]?) -> Float
+
+          private
+
+          attr_reader api_key: String
+
+          attr_reader model: String
+
+          attr_reader timeout: Integer
+
+          # @rbs state: String
+          # @rbs instructions: String
+          # @rbs criteria: Hash[String, String]?
+          def request_body: (state: String, instructions: String, criteria: Hash[String, String]?) -> Hash[Symbol, untyped]
+
+          # @rbs body: Hash[Symbol, untyped]
+          def post: (Hash[Symbol, untyped] body) -> Hash[String, untyped]
+
+          # @rbs http: Net::HTTP
+          # @rbs request: Net::HTTP::Post
+          def perform: (Net::HTTP http, Net::HTTP::Post request) -> Net::HTTPResponse
+
+          # @rbs response: Net::HTTPResponse
+          def parse_response: (Net::HTTPResponse response) -> Hash[String, untyped]
+
+          # @rbs response: Hash[String, untyped]
+          def extract_probability: (Hash[String, untyped] response) -> Float
+        end
+      end
+    end
+  end
+end

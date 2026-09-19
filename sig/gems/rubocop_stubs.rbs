@@ -1,0 +1,20 @@
+# Hand-written supplemental signatures for gaps in the community RBS
+# signatures for `rubocop` (incomplete) and `rubocop-rspec` (none at all).
+# Kept minimal: only what this gem's own code calls. Never regenerated —
+# see the `rbs:regenerate` task in the Rakefile.
+
+module RuboCop
+  class Config
+    def []: (String) -> untyped
+  end
+
+  module RSpec
+    # `rubocop-rspec` ships no RBS signatures of its own.
+    module Language
+      def self.config: () -> untyped
+      def self.config=: (untyped) -> untyped
+
+      def example?: (untyped node) -> bool
+    end
+  end
+end
