@@ -76,37 +76,11 @@ module RuboCop
       #   end
       class MultipleExamplesInGroup < Base
         include RuboCop::RSpec::Language
+        include RuboCop::RSpec::Structure::RequiresRuboCopRspec
 
         MSG = "This block has %<total>d examples directly nested. Merge them into a " \
               "single example, or add a nested context for each example to distinguish " \
               "their conditions."
-
-        # Used when `rubocop-rspec`'s own default config (which defines the
-        # `describe`/`context`/`shared_examples`/`it` DSL aliases) has not
-        # been merged, e.g. because a project lists only this gem under
-        # `plugins:`.
-        DEFAULT_LANGUAGE_CONFIG = {
-          "ExampleGroups" => {
-            "Regular" => %w[describe context feature example_group],
-            "Focused" => %w[fdescribe fcontext ffeature],
-            "Skipped" => %w[xdescribe xcontext xfeature]
-          },
-          "SharedGroups" => {
-            "Examples" => %w[shared_examples shared_examples_for],
-            "Context" => ["shared_context"]
-          },
-          "Examples" => {
-            "Regular" => %w[it specify example],
-            "Focused" => %w[fit fspecify fexample],
-            "Skipped" => %w[xit xspecify xexample skip],
-            "Pending" => ["pending"]
-          }
-        }.freeze
-
-        def on_new_investigation #: void
-          super
-          RuboCop::RSpec::Language.config = config["RSpec"]&.fetch("Language", nil) || DEFAULT_LANGUAGE_CONFIG
-        end
 
         # @rbs node: RuboCop::AST::BlockNode
         def on_block(node) #: void

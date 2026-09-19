@@ -28,6 +28,8 @@ module RuboCop
       class ConditionInExample < Base
         include RuboCop::RSpec::Language
 
+        include RuboCop::RSpec::Structure::RequiresRuboCopRspec
+
         MSG: ::String
 
         MSG_WITH_PROBABILITY: ::String
@@ -39,16 +41,9 @@ module RuboCop
         # uses an explicit when/if/の場合 token.
         JEV_CRITERIA: untyped
 
-        # Used when `rubocop-rspec`'s own default config (which defines the
-        # `it`/`specify`/`example` DSL aliases) has not been merged, e.g.
-        # because a project lists only this gem under `plugins:`.
-        DEFAULT_LANGUAGE_CONFIG: untyped
-
         @type_safe_client: untyped
 
         @heuristic: RuboCop::RSpec::Structure::ConditionHeuristic
-
-        def on_new_investigation: () -> void
 
         # @rbs node: RuboCop::AST::BlockNode
         def on_block: (RuboCop::AST::BlockNode node) -> void

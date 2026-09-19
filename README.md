@@ -216,8 +216,9 @@ RSpecStructure/MultipleExamplesInGroup:
 ```
 
 `rubocop-rspec` must also be listed under `plugins:` (this gem depends on
-it for the `it`/`specify`/`example` alias detection); if it is missing, a
-small built-in default is used instead of your project's own aliases.
+it for the `it`/`specify`/`example` alias detection); if it is missing,
+every cop in this gem raises a clear error rather than silently running
+against a guessed set of aliases.
 
 ## Development
 

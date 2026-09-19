@@ -8,6 +8,12 @@ module RuboCop
     def []: (String) -> untyped
   end
 
+  module Cop
+    class Base
+      def cop_name: () -> String
+    end
+  end
+
   module RSpec
     # `rubocop-rspec` ships no RBS signatures of its own.
     module Language

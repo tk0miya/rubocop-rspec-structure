@@ -1,0 +1,18 @@
+# Generated from lib/rubocop/rspec/structure/requires_rubocop_rspec.rb with RBS::Inline
+
+module RuboCop
+  module RSpec
+    module Structure
+      # Every cop that includes `RuboCop::RSpec::Language` needs
+      # `RuboCop::RSpec::Language.config` populated for its node matchers
+      # (`example?`, `spec_group?`, ...) to work at all. `rubocop-rspec`
+      # supplies it via `config["RSpec"]["Language"]` when loaded as a
+      # plugin; raise a clear, actionable error if it's missing instead of
+      # running against incomplete data.
+      # @rbs module-self RuboCop::Cop::Base
+      module RequiresRuboCopRspec : RuboCop::Cop::Base
+        def on_new_investigation: () -> void
+      end
+    end
+  end
+end
