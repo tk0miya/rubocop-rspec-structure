@@ -62,6 +62,7 @@ RSpec/SpecFilePathFormat:
     RuboCop: rubocop
     RSpec: rspec
     RSpecStructure: rspec_structure
+    RequiresRuboCopRspec: requires_rubocop_rspec
 
 # Style
 Style/AccessorGrouping:

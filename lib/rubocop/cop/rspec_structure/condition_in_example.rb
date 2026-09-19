@@ -27,6 +27,7 @@ module RuboCop
       #   end
       class ConditionInExample < Base
         include RuboCop::RSpec::Language
+        include RuboCop::RSpec::Structure::RequiresRuboCopRspec
 
         MSG = "Move the condition described here into a surrounding `context` block."
         MSG_WITH_PROBABILITY = "Move the condition described here into a surrounding `context` " \
@@ -61,25 +62,8 @@ module RuboCop
                      "which the example runs)."
         }.freeze
 
-        # Used when `rubocop-rspec`'s own default config (which defines the
-        # `it`/`specify`/`example` DSL aliases) has not been merged, e.g.
-        # because a project lists only this gem under `plugins:`.
-        DEFAULT_LANGUAGE_CONFIG = {
-          "Examples" => {
-            "Regular" => %w[it specify example],
-            "Focused" => %w[fit fspecify fexample],
-            "Skipped" => %w[xit xspecify xexample skip],
-            "Pending" => ["pending"]
-          }
-        }.freeze
-
         # @rbs @heuristic: RuboCop::RSpec::Structure::ConditionHeuristic
         # @rbs @type_safe_client: untyped
-
-        def on_new_investigation #: void
-          super
-          RuboCop::RSpec::Language.config = config["RSpec"]&.fetch("Language", nil) || DEFAULT_LANGUAGE_CONFIG
-        end
 
         # @rbs node: RuboCop::AST::BlockNode
         def on_block(node) #: void

@@ -2,6 +2,7 @@
 
 RSpec.describe RuboCop::Cop::RSpecStructure::MultipleExamplesInGroup, :config do
   let(:cop_config) { {} }
+  let(:other_cops) { { "RSpec" => { "Language" => RSPEC_LANGUAGE_CONFIG } } }
 
   context "when a group has one example directly nested" do
     it "does not flag it" do

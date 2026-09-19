@@ -77,15 +77,9 @@ module RuboCop
       class MultipleExamplesInGroup < Base
         include RuboCop::RSpec::Language
 
+        include RuboCop::RSpec::Structure::RequiresRuboCopRspec
+
         MSG: ::String
-
-        # Used when `rubocop-rspec`'s own default config (which defines the
-        # `describe`/`context`/`shared_examples`/`it` DSL aliases) has not
-        # been merged, e.g. because a project lists only this gem under
-        # `plugins:`.
-        DEFAULT_LANGUAGE_CONFIG: untyped
-
-        def on_new_investigation: () -> void
 
         # @rbs node: RuboCop::AST::BlockNode
         def on_block: (RuboCop::AST::BlockNode node) -> void

@@ -7,6 +7,7 @@ RSpec.describe RuboCop::Cop::RSpecStructure::ConditionInExample, :config do
   # examples judging the same description text would collide on the same
   # cache file and see each other's cached probability.
   let(:cop_config) { { "ConditionKeywords" => keywords, "CacheEnabled" => false } }
+  let(:other_cops) { { "RSpec" => { "Language" => RSPEC_LANGUAGE_CONFIG } } }
   let(:always_in_scope) { instance_double(RuboCop::RSpec::Structure::GitDiffScope, changed?: true) }
 
   before do
