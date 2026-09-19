@@ -1,0 +1,35 @@
+---
+RSpecStructure:
+  Enabled: true
+  Include:
+    - "**/*_spec.rb"
+    - "**/spec/**/*"
+
+RSpecStructure/ConditionInExample:
+  Description: >-
+    Checks that example descriptions do not contain a condition that
+    belongs in a surrounding `context` block instead.
+  Enabled: true
+  # diff (default): only judge examples touched by the current git diff.
+  # full: judge every example, regardless of what changed.
+  CheckScope: diff
+  # auto resolves the base ref itself (CI-aware; see README). Set an
+  # explicit branch/SHA to skip that resolution.
+  DiffBase: auto
+  ConditionKeywords:
+    - の場合
+    - のとき
+    - 場合
+    - 際
+    - when
+    - if
+    - in case
+    - given that
+  Model: jev-latest
+  JevThreshold: 0.6
+  JevTimeoutSeconds: 5
+  # skip (default): ignore TypeSafe API failures. warn: also print a
+  # message. raise: let the error propagate and fail the rubocop run.
+  OnJevError: skip
+  CacheEnabled: true
+  VersionAdded: "<<next>>"

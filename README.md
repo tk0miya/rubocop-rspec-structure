@@ -1,43 +1,155 @@
-# RuboCop::RSpec::Structure
+# rubocop-rspec-structure
 
-TODO: Delete this and the text below, and describe your gem
+A RuboCop plugin that checks the structure of RSpec examples. Its first
+cop, `RSpecStructure/ConditionInExample`, flags `it`/`example`
+descriptions that describe an execution condition (`〜の場合`, `〜のとき`,
+`when ...`, `if ...`) which belongs in a surrounding `context` block
+instead:
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/rubocop/rspec/structure`. To experiment with that code, run `bin/console` for an interactive prompt.
+```ruby
+# bad
+it "when the user is an admin, allows deletion" do
+  # ...
+end
+
+# good
+context "when the user is an admin" do
+  it "allows deletion" do
+    # ...
+  end
+end
+```
+
+## How it decides
+
+1. A cheap, always-on keyword check runs first (`ConditionKeywords`,
+   Japanese and English by default). If it matches, that's the offense —
+   no network call is made.
+2. If the keyword check finds nothing **and** a `TYPESAFE_API_KEY`
+   environment variable is set, the description is also judged
+   semantically by [Jev][jev], the first
+   [System One model][system-one] from [TypeSafe AI][typesafe]. Jev
+   evaluates a single yes/no question ("does this description embed a
+   condition that belongs in `context`?") and returns a calibrated
+   probability instead of generated text, which this cop compares against
+   `JevThreshold` (default `0.6`).
+3. Without an API key, only the keyword check runs. **The presence of
+   `TYPESAFE_API_KEY` is the only switch** between the two — there is no
+   separate "mode" setting.
+
+[jev]: https://docs.typesafe.ai
+[system-one]: https://docs.typesafe.ai/concepts/system-one
+[typesafe]: https://typesafe.ai
+
+### Setting up Jev (optional)
+
+```bash
+export TYPESAFE_API_KEY="..."
+```
+
+Never put the key itself in `.rubocop.yml`, since that file is normally
+committed. Calling Jev costs money and requires network access, so:
+
+- Results are cached on disk, keyed by the description, the prompt, and
+  the model, so the same input is never billed twice. The cache defaults
+  to a per-user location following the XDG Base Directory Specification
+  (`$XDG_CACHE_HOME/rubocop-rspec-structure/jev_cache.json`, falling back
+  to `~/.cache/...`), shared across every project on this machine, since
+  a Jev judgment only depends on the input, not the project. Set
+  `CachePath` to pin it to a repo-relative path instead — for example to
+  persist it across CI runs with `actions/cache`, since a CI runner's
+  home directory doesn't survive between runs on its own.
+- A network error, timeout, or malformed response is swallowed by default
+  (`OnJevError: skip`). Set `warn` to also print a message, or `raise` to
+  fail the rubocop run.
+- Jev has documented jaggedness — it reads instructions literally and
+  loses accuracy when given irrelevant context — so this cop sends it
+  only the bare description text by design. Treat a Jev-triggered offense
+  as a suggestion to review, not a verdict.
+
+### Checking only what changed
+
+Calling an external API on every example in a large suite, on every run,
+is wasteful. `CheckScope` defaults to `diff`: only examples touched by the
+current git diff are judged at all (heuristic and Jev alike). Set
+`CheckScope: full` to check everything regardless of what changed.
+
+`DiffBase` defaults to `auto`:
+
+- Locally (no `CI` environment variable), it diffs against `HEAD`, i.e.
+  your uncommitted changes.
+- In CI (`CI` is set), it resolves the actual merge base against the
+  pull/merge request's target branch (`GITHUB_BASE_REF` on GitHub Actions,
+  `CI_MERGE_REQUEST_TARGET_BRANCH_NAME` on GitLab CI), falling back to
+  `origin/HEAD`. A shallow checkout can leave `origin/HEAD` unresolvable —
+  fetch enough history (e.g. `actions/checkout` with `fetch-depth: 0`, or
+  explicitly fetch the base branch) for this to work.
+- If none of the above resolves (e.g. no `origin` remote at all), it falls
+  back to `HEAD` as a last resort. In CI that usually means an empty diff —
+  nothing gets checked, rather than the run failing outright. If a PR seems
+  to go unchecked, this fallback is the first thing to rule out; set
+  `DiffBase` explicitly (or `CheckScope: full`) if it does.
+- New files git doesn't know about yet (not `git add`ed) are always
+  in scope in full, regardless of `DiffBase` — `git diff` never lists
+  untracked files, so this is handled as a special case.
+
+Both settings can be overridden per run without touching `.rubocop.yml`:
+
+```bash
+RUBOCOP_RSPEC_STRUCTURE_CHECK_SCOPE=full bundle exec rubocop
+RUBOCOP_RSPEC_STRUCTURE_DIFF_BASE=origin/main bundle exec rubocop
+```
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
-
-Install the gem and add to the application's Gemfile by executing:
-
 ```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+bundle add rubocop-rspec-structure
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+## Configuration
 
-```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+```yaml
+# .rubocop.yml
+plugins:
+  - rubocop-rspec
+  - rubocop-rspec-structure
+
+RSpecStructure/ConditionInExample:
+  ConditionKeywords:
+    - の場合
+    - のとき
+    - 場合
+    - 際
+    - when
+    - if
+    - in case
+    - given that
+  CheckScope: diff # diff | full
+  DiffBase: auto
+  JevThreshold: 0.6
+  JevTimeoutSeconds: 5
+  OnJevError: skip # skip | warn | raise
+  CacheEnabled: true
+  # CachePath: tmp/rubocop-rspec-structure/jev_cache.json # see "Setting up Jev" above
 ```
 
-## Usage
-
-TODO: Write usage instructions here
+`rubocop-rspec` must also be listed under `plugins:` (this gem depends on
+it for the `it`/`specify`/`example` alias detection); if it is missing, a
+small built-in default is used instead of your project's own aliases.
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+After checking out the repo, run `bin/setup` to install dependencies.
+`bundle exec rake ci` runs everything CI runs (rubocop, rspec, steep,
+rbs:validate). Type signatures under `sig/` are generated automatically
+from `# @rbs` inline annotations in `lib/`; do not edit `sig/` by hand.
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/rubocop-rspec-structure. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/rubocop-rspec-structure/blob/main/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at
+https://github.com/tk0miya/rubocop-rspec-structure.
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-## Code of Conduct
-
-Everyone interacting in the RuboCop::RSpec::Structure project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/rubocop-rspec-structure/blob/main/CODE_OF_CONDUCT.md).
+The gem is available as open source under the terms of the
+[MIT License](https://opensource.org/licenses/MIT).

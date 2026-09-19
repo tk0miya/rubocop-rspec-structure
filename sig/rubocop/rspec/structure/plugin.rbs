@@ -1,0 +1,21 @@
+# Generated from lib/rubocop/rspec/structure/plugin.rb with RBS::Inline
+
+module RuboCop
+  module RSpec
+    module Structure
+      # Integrates this gem with RuboCop's plugin system (via lint_roller),
+      # the same mechanism rubocop-rspec itself uses. Referenced from the
+      # gemspec's `default_lint_roller_plugin` metadata, so listing this gem
+      # under `plugins:` in `.rubocop.yml` is enough to load it.
+      class Plugin < LintRoller::Plugin
+        def about: () -> LintRoller::About
+
+        # @rbs context: untyped
+        def supported?: (untyped context) -> bool
+
+        # @rbs _context: untyped
+        def rules: (untyped _context) -> LintRoller::Rules
+      end
+    end
+  end
+end

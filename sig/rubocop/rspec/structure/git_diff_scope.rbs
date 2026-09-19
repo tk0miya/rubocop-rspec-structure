@@ -1,0 +1,86 @@
+# Generated from lib/rubocop/rspec/structure/git_diff_scope.rb with RBS::Inline
+
+module RuboCop
+  module RSpec
+    module Structure
+      # Computes which lines changed relative to a base git ref, so
+      # `CheckScope: diff` can skip examples nobody touched instead of
+      # re-judging the whole suite on every run. `git diff` runs once per
+      # process (memoized by resolved base) and is shared by every cop
+      # instance, since RuboCop instantiates a cop per file.
+      class GitDiffScope
+        FILE_HEADER: ::Regexp
+
+        HUNK_HEADER: ::Regexp
+
+        @git_root: String
+
+        self.@instances: Hash[String, GitDiffScope]
+
+        # @rbs diff_base: String
+        def self.for: (diff_base: String) -> GitDiffScope
+
+        # Test-only: forces the next `for` to recompute against the
+        # current git state instead of returning a memoized instance.
+        def self.reset!: () -> void
+
+        # @rbs diff_base: String
+        def initialize: (diff_base: String) -> void
+
+        # @rbs path: String
+        # @rbs line: Integer
+        def changed?: (String path, Integer line) -> bool
+
+        private
+
+        attr_reader changed_lines: Hash[String, Array[Integer] | Symbol]
+
+        # `"auto"` resolves the base ref by environment; anything else
+        # (an explicit branch/SHA from config or an env override) is used
+        # as-is.
+        # @rbs diff_base: String
+        def resolve_base: (String diff_base) -> String
+
+        # GitHub Actions and GitLab CI both expose the pull/merge request's
+        # target branch name; resolve it to the actual divergence point so
+        # commits already on the base branch are not flagged as "changed".
+        def ci_merge_base: () -> String?
+
+        # @rbs ref: String
+        def merge_base: (String ref) -> String?
+
+        # `git diff` never lists untracked files at all (that's not a diff
+        # against anything), so a newly-written, not-yet-`git add`ed spec
+        # file would otherwise be silently out of scope no matter what it
+        # contains. Treat every line of an untracked file as changed.
+        # @rbs base: String
+        def compute_changed_lines: (String base) -> Hash[String, Array[Integer] | Symbol]
+
+        def untracked_files: () -> Array[String]
+
+        # Parses unified diff hunk headers (`@@ -a,b +c,d @@`) to collect,
+        # per file, the line numbers that exist on the new side of the
+        # diff. Pure-deletion hunks (new-side count of 0) contribute no
+        # lines, since nothing new exists there to judge.
+        # @rbs diff: String
+        def parse_diff: (String diff) -> Hash[String, Array[Integer]]
+
+        # @rbs changed: Hash[String, Array[Integer]]
+        # @rbs file: String
+        # @rbs hunk_header: MatchData
+        def record_hunk: (Hash[String, Array[Integer]] changed, String file, MatchData hunk_header) -> void
+
+        # @rbs match: MatchData
+        def file_from_header: (MatchData match) -> String?
+
+        # @rbs match: MatchData
+        def new_side_lines: (MatchData match) -> Array[Integer]
+
+        def git_root: () -> String
+
+        # @rbs path: String
+        def relative_path: (String path) -> String
+      end
+    end
+  end
+end

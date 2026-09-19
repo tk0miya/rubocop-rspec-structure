@@ -17,3 +17,23 @@ path: .gem_rbs_collection
 #   # If you want to avoid installing rbs files for gems, you can specify them here.
 #   - name: GEM_NAME
 #     ignore: true
+
+gems:
+  # stdlib signatures this gem's code needs that aren't already pulled in
+  # transitively by another gem's dependency (json, uri are):
+  #   digest    - type_safe/cache.rb (Digest::SHA256.hexdigest)
+  #   net-http  - type_safe/client.rb (Net::HTTP)
+  #   open3     - git_diff_scope.rb (Open3.capture2/capture3)
+  #   pathname  - git_diff_scope.rb (Pathname)
+  - name: digest
+    source:
+      type: stdlib
+  - name: net-http
+    source:
+      type: stdlib
+  - name: open3
+    source:
+      type: stdlib
+  - name: pathname
+    source:
+      type: stdlib

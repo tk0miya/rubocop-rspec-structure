@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
-require "rubocop/rspec/structure"
+require "rubocop-rspec-structure"
+require "rubocop/rspec/support"
+
+Dir[File.join(__dir__, "support/**/*.rb")].each { require _1 }
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

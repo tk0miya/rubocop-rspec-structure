@@ -2,6 +2,9 @@ PATH
   remote: .
   specs:
     rubocop-rspec-structure (0.1.0)
+      lint_roller (~> 1.1)
+      rubocop (>= 1.86, < 2.0)
+      rubocop-rspec (>= 3.0, < 4.0)
 
 GEM
   remote: https://rubygems.org/
@@ -159,11 +162,9 @@ DEPENDENCIES
   rbs
   rbs-inline
   rspec (~> 3.0)
-  rubocop (~> 1.21)
   rubocop-numbered-params
   rubocop-rake
   rubocop-rbs_inline
-  rubocop-rspec
   rubocop-rspec-structure!
   rubocop-rspec-unused-let
   steep

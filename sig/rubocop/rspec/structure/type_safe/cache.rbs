@@ -1,0 +1,44 @@
+# Generated from lib/rubocop/rspec/structure/type_safe/cache.rb with RBS::Inline
+
+module RuboCop
+  module RSpec
+    module Structure
+      module TypeSafe
+        # Memoizes Noul judgments on disk, keyed by the content of the
+        # request (state + instructions + criteria + model). Repeated
+        # rubocop runs over unchanged descriptions never pay for a second
+        # API call, and the same input always yields the same offense.
+        class Cache
+          # @rbs client: untyped
+          # @rbs model: String
+          # @rbs path: String
+          def initialize: (client: untyped, model: String, path: String) -> void
+
+          # @rbs state: String
+          # @rbs instructions: String
+          # @rbs criteria: Hash[String, String]?
+          def noul: (state: String, instructions: String, ?criteria: Hash[String, String]?) -> Float
+
+          private
+
+          attr_reader client: untyped
+
+          attr_reader model: String
+
+          attr_reader path: String
+
+          attr_reader store: Hash[String, Float]
+
+          def load_store: () -> Hash[String, Float]
+
+          def save_store: () -> void
+
+          # @rbs state: String
+          # @rbs instructions: String
+          # @rbs criteria: Hash[String, String]?
+          def cache_key: (state: String, instructions: String, criteria: Hash[String, String]?) -> String
+        end
+      end
+    end
+  end
+end
