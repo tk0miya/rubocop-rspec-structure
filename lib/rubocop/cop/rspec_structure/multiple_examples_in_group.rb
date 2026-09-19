@@ -3,11 +3,13 @@
 module RuboCop
   module Cop
     module RSpecStructure
-      # Checks that an example group (`describe`, `context`, `feature`, ...)
-      # does not directly nest more than one example. Under BDD's
-      # Given-When-Then structure, a group's own body is a single
-      # precondition — the subject under `describe`, or the "Given"/"When"
-      # under `context` — so it should set up exactly one "Then". Two
+      # Checks that a group block (`describe`, `context`, `feature`,
+      # `shared_examples`, `shared_context`, ...) does not directly nest
+      # more than one example. Under BDD's Given-When-Then structure, a
+      # group's own body is a single precondition — the subject under
+      # `describe`, the "Given"/"When" under `context`, or whatever
+      # precondition its includer supplies under `shared_examples`/
+      # `shared_context` — so it should set up exactly one "Then". Two
       # examples sitting side by side in the same group with nothing
       # distinguishing them push the reader to guess whether they share one
       # condition (so they belong in a single example) or cover different
@@ -63,21 +65,35 @@ module RuboCop
       #       end
       #     end
       #   end
-      class MultipleExamplesInExampleGroup < Base
+      #
+      #   # bad - a shared group is checked the same as any other group
+      #   shared_examples "a paginated collection" do
+      #     it "returns the first page" do
+      #     end
+      #
+      #     it "returns the total count" do
+      #     end
+      #   end
+      class MultipleExamplesInGroup < Base
         include RuboCop::RSpec::Language
 
-        MSG = "This example group has %<total>d examples directly nested. Merge them into a " \
+        MSG = "This block has %<total>d examples directly nested. Merge them into a " \
               "single example, or add a nested context for each example to distinguish " \
               "their conditions."
 
         # Used when `rubocop-rspec`'s own default config (which defines the
-        # `describe`/`context`/`it` DSL aliases) has not been merged, e.g.
-        # because a project lists only this gem under `plugins:`.
+        # `describe`/`context`/`shared_examples`/`it` DSL aliases) has not
+        # been merged, e.g. because a project lists only this gem under
+        # `plugins:`.
         DEFAULT_LANGUAGE_CONFIG = {
           "ExampleGroups" => {
             "Regular" => %w[describe context feature example_group],
             "Focused" => %w[fdescribe fcontext ffeature],
             "Skipped" => %w[xdescribe xcontext xfeature]
+          },
+          "SharedGroups" => {
+            "Examples" => %w[shared_examples shared_examples_for],
+            "Context" => ["shared_context"]
           },
           "Examples" => {
             "Regular" => %w[it specify example],
@@ -94,7 +110,7 @@ module RuboCop
 
         # @rbs node: RuboCop::AST::BlockNode
         def on_block(node) #: void
-          return unless example_group?(node)
+          return unless spec_group?(node)
 
           examples = direct_examples(node)
           return if examples.size <= 1

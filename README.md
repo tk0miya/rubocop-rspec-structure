@@ -102,16 +102,18 @@ RUBOCOP_RSPEC_STRUCTURE_CHECK_SCOPE=full bundle exec rubocop
 RUBOCOP_RSPEC_STRUCTURE_DIFF_BASE=origin/main bundle exec rubocop
 ```
 
-## `RSpecStructure/MultipleExamplesInExampleGroup`
+## `RSpecStructure/MultipleExamplesInGroup`
 
-Flags an example group (`describe`, `context`, `feature`, ...) that
-directly nests more than one example. Under BDD's Given-When-Then
-structure, a group's own body is a single precondition — the subject
-under `describe`, or the "Given"/"When" under `context` — so it should
-set up exactly one "Then". Two examples sitting side by side in the same
-group with nothing distinguishing them push the reader to guess whether
-they share one condition (so they belong in a single example) or cover
-different conditions (so they belong in separate `context` blocks):
+Flags a group block (`describe`, `context`, `feature`, `shared_examples`,
+`shared_context`, ...) that directly nests more than one example. Under
+BDD's Given-When-Then structure, a group's own body is a single
+precondition — the subject under `describe`, the "Given"/"When" under
+`context`, or whatever precondition its includer supplies under
+`shared_examples`/`shared_context` — so it should set up exactly one
+"Then". Two examples sitting side by side in the same group with nothing
+distinguishing them push the reader to guess whether they share one
+condition (so they belong in a single example) or cover different
+conditions (so they belong in separate `context` blocks):
 
 ```ruby
 # bad
@@ -154,6 +156,15 @@ context "when the user is an admin" do
     end
   end
 end
+
+# bad - a shared group is checked the same as any other group
+shared_examples "a paginated collection" do
+  it "returns the first page" do
+  end
+
+  it "returns the total count" do
+  end
+end
 ```
 
 Only examples nested directly in a group's own body count; examples
@@ -166,7 +177,7 @@ allow more.
 Unlike `RSpecStructure/ConditionInExample`, this cop doesn't honor
 `CheckScope`/`DiffBase`: the check is a cheap, purely mechanical AST
 inspection with no external API to call, so there's no cost to weigh
-against always checking every example group in full.
+against always checking every group in full.
 
 ## Installation
 
@@ -200,7 +211,7 @@ RSpecStructure/ConditionInExample:
   CacheEnabled: true
   # CachePath: tmp/rubocop-rspec-structure/jev_cache.json # see "Setting up Jev" above
 
-RSpecStructure/MultipleExamplesInExampleGroup:
+RSpecStructure/MultipleExamplesInGroup:
   Enabled: true # this cop has no other options
 ```
 
