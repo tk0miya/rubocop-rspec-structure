@@ -15,6 +15,7 @@ module RuboCop
       def self.config=: (untyped) -> untyped
 
       def example?: (untyped node) -> bool
+      def example_group?: (untyped node) -> bool
     end
   end
 end

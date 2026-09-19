@@ -1,10 +1,12 @@
 # rubocop-rspec-structure
 
-A RuboCop plugin that checks the structure of RSpec examples. Its first
-cop, `RSpecStructure/ConditionInExample`, flags `it`/`example`
-descriptions that describe an execution condition (`〜の場合`, `〜のとき`,
-`when ...`, `if ...`) which belongs in a surrounding `context` block
-instead:
+A RuboCop plugin that checks the structure of RSpec examples.
+
+## `RSpecStructure/ConditionInExample`
+
+Flags `it`/`example` descriptions that describe an execution condition
+(`〜の場合`, `〜のとき`, `when ...`, `if ...`) which belongs in a surrounding
+`context` block instead:
 
 ```ruby
 # bad
@@ -100,6 +102,72 @@ RUBOCOP_RSPEC_STRUCTURE_CHECK_SCOPE=full bundle exec rubocop
 RUBOCOP_RSPEC_STRUCTURE_DIFF_BASE=origin/main bundle exec rubocop
 ```
 
+## `RSpecStructure/MultipleExamplesInExampleGroup`
+
+Flags an example group (`describe`, `context`, `feature`, ...) that
+directly nests more than one example. Under BDD's Given-When-Then
+structure, a group's own body is a single precondition — the subject
+under `describe`, or the "Given"/"When" under `context` — so it should
+set up exactly one "Then". Two examples sitting side by side in the same
+group with nothing distinguishing them push the reader to guess whether
+they share one condition (so they belong in a single example) or cover
+different conditions (so they belong in separate `context` blocks):
+
+```ruby
+# bad
+describe User do
+  it "allows deletion" do
+  end
+
+  it "allows editing" do
+  end
+end
+
+# good - merged into one example
+context "when the user is an admin" do
+  it "allows deletion and editing" do
+  end
+end
+
+# good - split into separate contexts
+describe User do
+  context "when the user is an admin" do
+    it "allows deletion" do
+    end
+  end
+
+  context "when the user is a viewer" do
+    it "allows editing" do
+    end
+  end
+end
+
+# good - nested groups are fine; each one still has a single example
+context "when the user is an admin" do
+  context "and the record is archived" do
+    it "still allows deletion" do
+    end
+  end
+
+  context "and the record is active" do
+    it "allows deletion" do
+    end
+  end
+end
+```
+
+Only examples nested directly in a group's own body count; examples
+inside a nested group are that group's concern, not this one's. Unlike
+`RSpec/NestedGroups` or `RSpec/MultipleExpectations`, there is no `Max`
+to raise: more than one example is always an offense, by design — the
+point is to force a merge or a split, not to give a project a knob to
+allow more.
+
+Unlike `RSpecStructure/ConditionInExample`, this cop doesn't honor
+`CheckScope`/`DiffBase`: the check is a cheap, purely mechanical AST
+inspection with no external API to call, so there's no cost to weigh
+against always checking every example group in full.
+
 ## Installation
 
 ```bash
@@ -131,6 +199,9 @@ RSpecStructure/ConditionInExample:
   OnJevError: skip # skip | warn | raise
   CacheEnabled: true
   # CachePath: tmp/rubocop-rspec-structure/jev_cache.json # see "Setting up Jev" above
+
+RSpecStructure/MultipleExamplesInExampleGroup:
+  Enabled: true # this cop has no other options
 ```
 
 `rubocop-rspec` must also be listed under `plugins:` (this gem depends on
