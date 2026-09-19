@@ -33,3 +33,10 @@ RSpecStructure/ConditionInExample:
   OnJevError: skip
   CacheEnabled: true
   VersionAdded: "<<next>>"
+
+RSpecStructure/MultipleExamplesInExampleGroup:
+  Description: >-
+    Checks that an example group does not directly nest more than one
+    example.
+  Enabled: true
+  VersionAdded: "<<next>>"
