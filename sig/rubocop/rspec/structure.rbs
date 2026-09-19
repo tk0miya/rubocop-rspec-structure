@@ -1,0 +1,10 @@
+# Generated from lib/rubocop/rspec/structure.rb with RBS::Inline
+
+module RuboCop
+  module RSpec
+    module Structure
+      class Error < StandardError
+      end
+    end
+  end
+end

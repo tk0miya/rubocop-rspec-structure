@@ -1,0 +1,9 @@
+# Generated from lib/rubocop/rspec/structure/version.rb with RBS::Inline
+
+module RuboCop
+  module RSpec
+    module Structure
+      VERSION: ::String
+    end
+  end
+end
