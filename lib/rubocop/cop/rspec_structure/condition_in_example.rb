@@ -28,6 +28,8 @@ module RuboCop
       class ConditionInExample < Base
         include RuboCop::RSpec::Language
         include RuboCop::RSpec::Structure::RequiresRuboCopRspec
+        include RuboCop::RSpec::Structure::JevIntegration
+        include RuboCop::RSpec::Structure::DiffScoping
 
         MSG = "Move the condition described here into a surrounding `context` block."
         MSG_WITH_PROBABILITY = "Move the condition described here into a surrounding `context` " \
@@ -63,7 +65,6 @@ module RuboCop
         }.freeze
 
         # @rbs @heuristic: RuboCop::RSpec::Structure::ConditionHeuristic
-        # @rbs @type_safe_client: untyped
 
         # @rbs node: RuboCop::AST::BlockNode
         def on_block(node) #: void
@@ -97,7 +98,7 @@ module RuboCop
             return
           end
 
-          probability = jev_probability(text)
+          probability = jev_probability(text, instructions: JEV_INSTRUCTIONS, criteria: JEV_CRITERIA)
           return if probability.nil? || probability < cop_config.fetch("JevThreshold", 0.6)
 
           add_offense(description_node, message: format(MSG_WITH_PROBABILITY, probability:))
@@ -115,113 +116,6 @@ module RuboCop
           @heuristic ||= RuboCop::RSpec::Structure::ConditionHeuristic.new(
             keywords: cop_config.fetch("ConditionKeywords", [])
           )
-        end
-
-        # @rbs text: String
-        def jev_probability(text) #: Float?
-          api_key = type_safe_api_key
-          return nil unless api_key
-
-          client = type_safe_client(api_key)
-          client.noul(state: text, instructions: JEV_INSTRUCTIONS, criteria: JEV_CRITERIA)
-        rescue RuboCop::RSpec::Structure::TypeSafe::Error => e
-          handle_jev_error(e)
-          nil
-        end
-
-        # @rbs error: StandardError
-        def handle_jev_error(error) #: void
-          case cop_config.fetch("OnJevError", "skip")
-          when "raise"
-            raise error
-          when "warn"
-            warn("rubocop-rspec-structure: TypeSafe API error: #{error.message}")
-          end
-        end
-
-        # @rbs api_key: String
-        def type_safe_client(api_key) #: untyped
-          @type_safe_client ||= build_type_safe_client(api_key)
-        end
-
-        # @rbs api_key: String
-        def build_type_safe_client(api_key) #: untyped
-          client = RuboCop::RSpec::Structure::TypeSafe::Client.new(
-            api_key:, model:, timeout: cop_config.fetch("JevTimeoutSeconds", 5)
-          )
-          return client unless cop_config.fetch("CacheEnabled", true)
-
-          RuboCop::RSpec::Structure::TypeSafe::Cache.new(client:, model:, path: cache_path)
-        end
-
-        def type_safe_api_key #: String?
-          key = ENV.fetch("TYPESAFE_API_KEY", nil)
-          key.nil? || key.empty? ? nil : key
-        end
-
-        def check_scope #: String
-          env_or_config("RUBOCOP_RSPEC_STRUCTURE_CHECK_SCOPE", "CheckScope", "diff")
-        end
-
-        def diff_scope #: RuboCop::RSpec::Structure::GitDiffScope
-          RuboCop::RSpec::Structure::GitDiffScope.for(diff_base:)
-        end
-
-        def diff_base #: String
-          env_or_config("RUBOCOP_RSPEC_STRUCTURE_DIFF_BASE", "DiffBase", "auto")
-        end
-
-        # Used to build both the Client (its model param) and the Cache
-        # wrapping it (part of its cache key), so it earns a name instead
-        # of two identical `cop_config.fetch` calls.
-        def model #: String
-          cop_config.fetch("Model", "jev-latest")
-        end
-
-        def cache_path #: String
-          env_or_config("RUBOCOP_RSPEC_STRUCTURE_CACHE_PATH", "CachePath", default_cache_path)
-        end
-
-        # A Jev judgment is a pure function of (description, prompt, model), so it is
-        # equally valid for every project on this machine, not just the current one.
-        # Following the XDG Base Directory Specification (rather than a path under
-        # this project) lets that cache be shared across all of them.
-        def default_cache_path #: String
-          File.join(cache_home, "rubocop-rspec-structure", "jev_cache.json")
-        end
-
-        # Falls back to a project-relative path when the home directory can't be
-        # resolved at all, e.g. a minimal container running as an arbitrary UID
-        # with no matching passwd entry.
-        def cache_home #: String
-          xdg_cache_home = ENV.fetch("XDG_CACHE_HOME", nil)
-          return xdg_cache_home unless xdg_cache_home.nil? || xdg_cache_home.empty?
-
-          home = user_home
-          return File.join(home, ".cache") unless home.nil? || home.empty?
-
-          "tmp"
-        end
-
-        # Dir.home consults $HOME first, then falls back to the OS user database
-        # (e.g. /etc/passwd), which is more robust than reading ENV["HOME"] alone.
-        # It raises ArgumentError when neither resolves.
-        def user_home #: String?
-          Dir.home
-        rescue ArgumentError
-          nil
-        end
-
-        # A config value that can also be overridden by an environment variable,
-        # which always wins when set. `cop_config[config_key]` (rather than
-        # `#fetch`) also falls back to `default` when a project's `.rubocop.yml`
-        # sets the key to an explicit nil, since RuboCop's config merging only
-        # drops a nil override when the department default also declares the key.
-        # @rbs env_var: String
-        # @rbs config_key: String
-        # @rbs default: untyped
-        def env_or_config(env_var, config_key, default) #: untyped
-          ENV.fetch(env_var, nil) || cop_config[config_key] || default
         end
       end
     end

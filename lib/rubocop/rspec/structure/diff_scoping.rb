@@ -1,0 +1,34 @@
+# frozen_string_literal: true
+
+module RuboCop
+  module RSpec
+    module Structure
+      # Whether a node is worth investigating at all, based on `CheckScope`/
+      # `DiffBase`: skips nodes the current git diff hasn't touched, so an
+      # expensive per-node check doesn't get paid for on code nobody
+      # touched. This is independent of Jev specifically — any cop with a
+      # costly per-node check can use it — it just happens that today only
+      # Jev-calling cops need it, since a purely mechanical check (like
+      # `MultipleExamplesInGroup`) has no cost to weigh against always
+      # checking everything.
+      # @rbs module-self RuboCop::Cop::Base
+      module DiffScoping
+        include ConfigOverride
+
+        private
+
+        def check_scope #: String
+          env_or_config("RUBOCOP_RSPEC_STRUCTURE_CHECK_SCOPE", "CheckScope", "diff")
+        end
+
+        def diff_scope #: RuboCop::RSpec::Structure::GitDiffScope
+          RuboCop::RSpec::Structure::GitDiffScope.for(diff_base:)
+        end
+
+        def diff_base #: String
+          env_or_config("RUBOCOP_RSPEC_STRUCTURE_DIFF_BASE", "DiffBase", "auto")
+        end
+      end
+    end
+  end
+end

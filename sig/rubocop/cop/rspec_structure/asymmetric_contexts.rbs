@@ -1,0 +1,130 @@
+# Generated from lib/rubocop/cop/rspec_structure/asymmetric_contexts.rb with RBS::Inline
+
+module RuboCop
+  module Cop
+    module RSpecStructure
+      # Checks that a `context` describing one branch of an externally
+      # observable behavioral condition has a sibling context for its
+      # natural counterpart, among the `context` blocks nested directly
+      # under the same parent group.
+      #
+      # A lone context with no siblings at all is always flagged
+      # mechanically, with no Jev call: `context` is a statement that
+      # execution branches on some condition, so a context that stands
+      # alone either has a missing counterpart, or was never a real branch
+      # to begin with and shouldn't be wrapped in `context` at all.
+      #
+      # With two or more sibling contexts, each one is judged individually:
+      # is its natural complementary branch represented, exactly or
+      # loosely, by any of its siblings? That judgment is inherently
+      # semantic — no keyword list can decide it — so it is made only by
+      # Jev (TypeSafe AI's System One model). This cop has no deterministic
+      # fallback for that case, and is a no-op once there are two or more
+      # siblings without `TYPESAFE_API_KEY` set.
+      #
+      # Only direct siblings are compared. A counterpart implemented
+      # elsewhere — a different `describe`, a different file — does not
+      # satisfy this check: the point is that a behavioral branch should
+      # be represented in the same context tree, not merely covered
+      # somewhere in the suite.
+      #
+      # This cop does not check for exhaustive coverage of a multi-valued
+      # condition (e.g. a 3-way enum with only two values tested), and does
+      # not decide where in the tree a missing branch belongs, or whether
+      # existing siblings should be nested more deeply. Several offenses
+      # firing together on the same flat sibling list is this cop's way of
+      # signaling that the tree may need restructuring; it only surfaces
+      # the individual gaps, not the restructuring itself.
+      #
+      # @example
+      #   # bad - "when the user is logged in" is missing
+      #   describe "#dashboard" do
+      #     context "when the user is not logged in" do
+      #       it "redirects to the login page" do
+      #       end
+      #     end
+      #   end
+      #
+      #   # good
+      #   describe "#dashboard" do
+      #     context "when the user is not logged in" do
+      #       it "redirects to the login page" do
+      #       end
+      #     end
+      #
+      #     context "when the user is logged in" do
+      #       it "renders the dashboard" do
+      #       end
+      #     end
+      #   end
+      #
+      #   # bad - a lone context has no counterpart to compare against
+      #   describe "#dashboard" do
+      #     context "when the user is not logged in" do
+      #       it "redirects to the login page" do
+      #       end
+      #     end
+      #   end
+      class AsymmetricContexts < Base
+        include RuboCop::RSpec::Language
+
+        include RuboCop::RSpec::Structure::RequiresRuboCopRspec
+
+        include RuboCop::RSpec::Structure::JevIntegration
+
+        include RuboCop::RSpec::Structure::DiffScoping
+
+        MSG_SOLITARY: ::String
+
+        MSG_ASYMMETRIC: ::String
+
+        JEV_INSTRUCTIONS: ::String
+
+        JEV_CRITERIA: untyped
+
+        def context_family?: (untyped node) -> bool
+
+        def context_with_description: (untyped node) -> untyped
+
+        # @rbs node: RuboCop::AST::BlockNode
+        def on_block: (RuboCop::AST::BlockNode node) -> void
+
+        private
+
+        # Only the block's own top-level statements count, and only those
+        # that are themselves `context`-family blocks — same
+        # begin_type?/single-statement split as
+        # MultipleExamplesInGroup#direct_examples. Description text isn't
+        # read here, so an interpolated (dstr) sibling still counts toward
+        # this structural count.
+        # @rbs node: RuboCop::AST::BlockNode
+        def direct_context_siblings: (RuboCop::AST::BlockNode node) -> Array[RuboCop::AST::BlockNode]
+
+        # @rbs node: RuboCop::AST::BlockNode
+        # @rbs siblings: Array[RuboCop::AST::BlockNode]
+        def check_each_sibling: (RuboCop::AST::BlockNode node, Array[RuboCop::AST::BlockNode] siblings) -> void
+
+        # @rbs target: RuboCop::AST::BlockNode
+        # @rbs others: Array[RuboCop::AST::BlockNode]
+        def state_for: (RuboCop::AST::BlockNode target, Array[RuboCop::AST::BlockNode] others) -> String
+
+        # Re-matching is cheap, and lets `context_with_description`'s own
+        # capture (declared `untyped`, since rbs-inline can't see through
+        # `def_node_matcher`) supply the value instead of re-deriving it
+        # from a `first_argument` that a static type can't narrow to
+        # `StrNode` on its own. Every caller of this method has already
+        # confirmed the match, so this is never nil in practice.
+        # @rbs sibling: RuboCop::AST::BlockNode
+        def description_text: (RuboCop::AST::BlockNode sibling) -> String
+
+        # Checked at file granularity, deliberately coarser than
+        # `ConditionInExample`'s line-precise `changed?`: the judgment for
+        # any one sibling depends on every sibling in `node`, including one
+        # deleted outright elsewhere in the file, which leaves no line of
+        # its own for a line-precise check to find.
+        # @rbs node: RuboCop::AST::BlockNode
+        def out_of_scope?: (RuboCop::AST::BlockNode node) -> bool
+      end
+    end
+  end
+end

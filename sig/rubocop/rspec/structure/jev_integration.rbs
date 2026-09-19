@@ -1,0 +1,41 @@
+# Generated from lib/rubocop/rspec/structure/jev_integration.rb with RBS::Inline
+
+module RuboCop
+  module RSpec
+    module Structure
+      # Asking Jev a single yes/no question and getting back a calibrated
+      # probability: building the API client (optionally cache-wrapped),
+      # resolving the API key/model/cache path from config or environment,
+      # and turning a client error into whatever `OnJevError` asks for.
+      #
+      # `check_scope`/`diff_scope` (whether a node is worth the cost of an
+      # API call at all) are a separate responsibility — see
+      # `DiffScoping` — since they have nothing to do with Jev's API
+      # itself; each including cop composes the two independently.
+      # @rbs module-self RuboCop::Cop::Base
+      module JevIntegration : RuboCop::Cop::Base
+        include ConfigOverride
+
+        @type_safe_client: untyped
+
+        private
+
+        # @rbs state: String
+        # @rbs instructions: String
+        # @rbs criteria: Hash[String, String]?
+        def jev_probability: (String state, instructions: String, ?criteria: Hash[String, String]?) -> Float?
+
+        # @rbs error: StandardError
+        def handle_jev_error: (StandardError error) -> void
+
+        # @rbs api_key: String
+        def type_safe_client: (String api_key) -> untyped
+
+        # @rbs api_key: String
+        def build_type_safe_client: (String api_key) -> untyped
+
+        def type_safe_api_key: () -> String?
+      end
+    end
+  end
+end
