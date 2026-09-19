@@ -34,7 +34,7 @@ RSpecStructure/ConditionInExample:
   CacheEnabled: true
   VersionAdded: "<<next>>"
 
-RSpecStructure/MultipleExamplesInExampleGroup:
+RSpecStructure/MultipleExamplesInGroup:
   Description: >-
     Checks that a group block (example group or shared group) does not
     directly nest more than one example.

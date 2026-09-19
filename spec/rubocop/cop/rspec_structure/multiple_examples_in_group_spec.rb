@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe RuboCop::Cop::RSpecStructure::MultipleExamplesInExampleGroup, :config do
+RSpec.describe RuboCop::Cop::RSpecStructure::MultipleExamplesInGroup, :config do
   let(:cop_config) { {} }
 
   context "when a group has one example directly nested" do

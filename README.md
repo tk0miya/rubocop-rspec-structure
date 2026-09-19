@@ -102,7 +102,7 @@ RUBOCOP_RSPEC_STRUCTURE_CHECK_SCOPE=full bundle exec rubocop
 RUBOCOP_RSPEC_STRUCTURE_DIFF_BASE=origin/main bundle exec rubocop
 ```
 
-## `RSpecStructure/MultipleExamplesInExampleGroup`
+## `RSpecStructure/MultipleExamplesInGroup`
 
 Flags a group block (`describe`, `context`, `feature`, `shared_examples`,
 `shared_context`, ...) that directly nests more than one example. Under
@@ -211,7 +211,7 @@ RSpecStructure/ConditionInExample:
   CacheEnabled: true
   # CachePath: tmp/rubocop-rspec-structure/jev_cache.json # see "Setting up Jev" above
 
-RSpecStructure/MultipleExamplesInExampleGroup:
+RSpecStructure/MultipleExamplesInGroup:
   Enabled: true # this cop has no other options
 ```
 
