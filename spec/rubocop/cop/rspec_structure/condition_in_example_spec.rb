@@ -140,80 +140,27 @@ RSpec.describe RuboCop::Cop::RSpecStructure::ConditionInExample, :config do
   context "with a TYPESAFE_API_KEY configured" do
     before { ENV["TYPESAFE_API_KEY"] = "dummy" }
 
-    context "when resolving the default cache path" do
-      let(:cop_config) { { "ConditionKeywords" => keywords } }
+    context "when resolving the cache path" do
+      # The default-path resolution algorithm itself (XDG_CACHE_HOME, HOME,
+      # Dir.home fallbacks, ...) is `Cache`'s own responsibility and is
+      # covered by its spec; this cop only needs to prove it wires
+      # `CachePath` (or its absence) through correctly.
+      context "when CachePath is configured" do
+        let(:cop_config) { { "ConditionKeywords" => keywords, "CachePath" => "tmp/custom_cache.json" } }
 
-      around do |example|
-        original_xdg_cache_home = ENV.fetch("XDG_CACHE_HOME", nil)
-        original_home = ENV.fetch("HOME", nil) # rubocop:disable Style/EnvHome -- restoring the raw env var, not resolving home
-        example.run
-      ensure
-        original_xdg_cache_home ? (ENV["XDG_CACHE_HOME"] = original_xdg_cache_home) : ENV.delete("XDG_CACHE_HOME")
-        original_home ? (ENV["HOME"] = original_home) : ENV.delete("HOME")
-      end
-
-      context "when XDG_CACHE_HOME is set" do
-        it "builds the cache under XDG_CACHE_HOME" do
-          ENV["XDG_CACHE_HOME"] = "/xdg-cache"
-
-          expect_cache_path("/xdg-cache/rubocop-rspec-structure/jev_cache.json")
+        it "passes it through to the cache" do
+          expect_cache_path("tmp/custom_cache.json")
         end
       end
 
-      context "when only HOME is set" do
-        it "builds the cache under HOME/.cache" do
-          ENV.delete("XDG_CACHE_HOME")
-          ENV["HOME"] = "/home/example"
+      # Not configured and explicitly nil both resolve the same way here
+      # (`cop_config[key] || default` with `default` itself now `nil`),
+      # so one case covers both — see `ConfigOverride#env_or_config`.
+      context "when CachePath is not configured (or explicitly nil)" do
+        let(:cop_config) { { "ConditionKeywords" => keywords } }
 
-          expect_cache_path("/home/example/.cache/rubocop-rspec-structure/jev_cache.json")
-        end
-      end
-
-      context "when XDG_CACHE_HOME is set but empty" do
-        it "builds the cache under HOME/.cache" do
-          ENV["XDG_CACHE_HOME"] = ""
-          ENV["HOME"] = "/home/example"
-
-          expect_cache_path("/home/example/.cache/rubocop-rspec-structure/jev_cache.json")
-        end
-      end
-
-      context "when HOME is set but empty and XDG_CACHE_HOME is not set" do
-        it "falls back to a project-relative path" do
-          ENV.delete("XDG_CACHE_HOME")
-          ENV["HOME"] = ""
-
-          expect_cache_path("tmp/rubocop-rspec-structure/jev_cache.json")
-        end
-      end
-
-      context "when HOME is not set but Dir.home resolves it another way (e.g. /etc/passwd)" do
-        it "builds the cache under it" do
-          ENV.delete("XDG_CACHE_HOME")
-          ENV.delete("HOME")
-          allow(Dir).to receive(:home).and_return("/home/passwd-resolved")
-
-          expect_cache_path("/home/passwd-resolved/.cache/rubocop-rspec-structure/jev_cache.json")
-        end
-      end
-
-      context "when Dir.home cannot be resolved at all" do
-        it "falls back to a project-relative path" do
-          ENV.delete("XDG_CACHE_HOME")
-          ENV.delete("HOME")
-          allow(Dir).to receive(:home).and_raise(ArgumentError)
-
-          expect_cache_path("tmp/rubocop-rspec-structure/jev_cache.json")
-        end
-      end
-
-      context "when CachePath is explicitly nil" do
-        let(:cop_config) { { "ConditionKeywords" => keywords, "CachePath" => nil } }
-
-        it "falls back to the default instead of a nil path" do
-          ENV["XDG_CACHE_HOME"] = "/xdg-cache"
-
-          expect_cache_path("/xdg-cache/rubocop-rspec-structure/jev_cache.json")
+        it "passes nil, letting the cache resolve its own default" do
+          expect_cache_path(nil)
         end
       end
     end

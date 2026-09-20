@@ -2,6 +2,88 @@
 
 A RuboCop plugin that checks the structure of RSpec examples.
 
+## `RSpecStructure/AsymmetricContexts`
+
+Flags a `context` that describes one branch of an externally observable
+behavioral condition (a boolean state, an enum value, a success/failure
+outcome, ...) without a sibling `context` for its natural counterpart,
+among the `context` blocks nested directly under the same parent group:
+
+```ruby
+# bad - "when the user is logged in" is missing
+describe "#dashboard" do
+  context "when the user is not logged in" do
+    it "redirects to the login page" do
+    end
+  end
+end
+
+# good
+describe "#dashboard" do
+  context "when the user is not logged in" do
+    it "redirects to the login page" do
+    end
+  end
+
+  context "when the user is logged in" do
+    it "renders the dashboard" do
+    end
+  end
+end
+```
+
+A `context` is a statement that execution branches on some condition, so
+a **lone context with no siblings at all** is always flagged, mechanically
+and at no cost (no Jev call, no `TYPESAFE_API_KEY` needed): either its
+counterpart is missing, or there was never a real branch to begin with and
+it shouldn't have been wrapped in `context`.
+
+```ruby
+# bad - a lone context has no counterpart to compare against
+describe "#dashboard" do
+  context "when the user is not logged in" do
+    it "redirects to the login page" do
+    end
+  end
+end
+```
+
+With **two or more sibling contexts**, each one is judged individually:
+does some sibling — exactly or loosely — represent its natural
+complementary branch? That judgment is inherently semantic (no keyword
+list can decide it), so it is made only by [Jev][jev]. Unlike
+`ConditionInExample`, there is no deterministic fallback for this case:
+this cop is a complete no-op for groups of two or more siblings unless
+`TYPESAFE_API_KEY` is set. See "Setting up Jev (optional)" and "Checking
+only what changed" under `ConditionInExample` below — this cop shares the
+exact same cache, `OnJevError`, `CheckScope`, and `DiffBase` machinery,
+except that `CheckScope: diff` is checked per **file** here rather than
+per line: since a sibling's asymmetry depends on the whole set of
+siblings around it, not just its own line, and a Jev call is cheap and
+cache-backed, every context in a touched file is judged, not just the
+ones whose own lines moved.
+Like the rest of Jev's judgments, it returns a bare calibrated probability
+with no explanation of why — there is no way to ask it for its reasoning.
+
+Only **direct siblings** are compared. A counterpart implemented
+elsewhere — a different `describe`, a different file — does not satisfy
+this check. This is intentional, not a shortcut: the point is that a
+behavioral branch should be represented in the same context tree, not
+merely covered somewhere in the suite.
+
+### Non-goals
+
+This cop does not check for **exhaustive coverage** of a multi-valued
+condition — e.g. a 3-way enum (`skip`/`warn`/`raise`) with only two values
+tested is a coverage/completeness question, not asymmetry, and is left
+untouched.
+
+This cop also does not decide **where in the tree** a missing branch
+belongs, or whether existing siblings should be nested more deeply. Each
+sibling is judged independently, so several offenses can fire together on
+the same flat sibling list — read that as a hint the tree may need
+restructuring, not as separate, unrelated findings.
+
 ## `RSpecStructure/ConditionInExample`
 
 Flags `it`/`example` descriptions that describe an execution condition
@@ -192,6 +274,14 @@ bundle add rubocop-rspec-structure
 plugins:
   - rubocop-rspec
   - rubocop-rspec-structure
+
+RSpecStructure/AsymmetricContexts:
+  CheckScope: diff # diff | full
+  DiffBase: auto
+  JevThreshold: 0.7
+  JevTimeoutSeconds: 5
+  OnJevError: skip # skip | warn | raise
+  CacheEnabled: true
 
 RSpecStructure/ConditionInExample:
   ConditionKeywords:

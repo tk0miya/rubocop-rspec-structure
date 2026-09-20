@@ -35,7 +35,7 @@ module RuboCop
 
         # @rbs diff_base: String
         def initialize(diff_base:) #: void
-          @changed_lines = compute_changed_lines(resolve_base(diff_base))
+          @changed_lines = compute_diff(resolve_base(diff_base))
         end
 
         # @rbs path: String
@@ -45,6 +45,18 @@ module RuboCop
           return true if lines == :all
 
           lines.is_a?(Array) && lines.include?(line)
+        end
+
+        # Whether the file appeared anywhere in the diff at all — added,
+        # edited, or had content deleted from it — regardless of which
+        # specific line a caller cares about. Coarser than `changed?`, but
+        # immune to the line/hunk-boundary bookkeeping `changed?` needs: a
+        # pure deletion (removing a sibling `context` outright, say) has no
+        # new-side line of its own to record, so a line-precise check can
+        # miss it entirely. This only needs to know the file was touched.
+        # @rbs path: String
+        def changed_file?(path) #: bool
+          changed_lines.key?(relative_path(path))
         end
 
         private
@@ -83,7 +95,7 @@ module RuboCop
         # file would otherwise be silently out of scope no matter what it
         # contains. Treat every line of an untracked file as changed.
         # @rbs base: String
-        def compute_changed_lines(base) #: Hash[String, (Array[Integer] | Symbol)]
+        def compute_diff(base) #: Hash[String, (Array[Integer] | Symbol)]
           diff, status = Open3.capture2("git", "diff", "--unified=0", "--no-color", base)
           # Open3 tags the captured string with Encoding.default_external, which is not
           # necessarily UTF-8 (e.g. a plain "C"/"POSIX" locale reports US-ASCII), so a diff
@@ -108,8 +120,10 @@ module RuboCop
 
         # Parses unified diff hunk headers (`@@ -a,b +c,d @@`) to collect,
         # per file, the line numbers that exist on the new side of the
-        # diff. Pure-deletion hunks (new-side count of 0) contribute no
-        # lines, since nothing new exists there to judge.
+        # diff. A file with only pure-deletion hunks (new-side count of 0)
+        # still gets an entry (an empty array) so `changed_file?` can see
+        # it was touched, even though it has no specific new-side line for
+        # `changed?` to report.
         # @rbs diff: String
         def parse_diff(diff) #: Hash[String, Array[Integer]]
           changed = {} #: Hash[String, Array[Integer]]

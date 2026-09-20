@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+- Add `RSpecStructure/AsymmetricContexts`, which flags a `context`
+  describing one branch of an externally observable condition that has
+  no sibling `context` for its natural counterpart. A lone context with
+  no siblings is always flagged mechanically; two or more siblings are
+  judged semantically via Jev, with no deterministic fallback.
 - Add `RSpecStructure/ConditionInExample`, which flags example
   descriptions that embed an execution condition belonging in a
   surrounding `context` block. A keyword check runs by default; setting

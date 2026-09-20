@@ -5,6 +5,24 @@ RSpecStructure:
     - "**/*_spec.rb"
     - "**/spec/**/*"
 
+RSpecStructure/AsymmetricContexts:
+  Description: >-
+    Checks that a `context` describing one branch of an externally
+    observable condition has a sibling context for its natural
+    counterpart. A lone context with no siblings is always flagged
+    mechanically; two or more siblings are judged semantically by Jev
+    (see ConditionInExample's "Setting up Jev"), a no-op without
+    TYPESAFE_API_KEY.
+  Enabled: true
+  CheckScope: diff
+  DiffBase: auto
+  Model: jev-latest
+  JevThreshold: 0.7
+  JevTimeoutSeconds: 5
+  OnJevError: skip
+  CacheEnabled: true
+  VersionAdded: "<<next>>"
+
 RSpecStructure/ConditionInExample:
   Description: >-
     Checks that example descriptions do not contain a condition that

@@ -30,6 +30,10 @@ module RuboCop
 
         include RuboCop::RSpec::Structure::RequiresRuboCopRspec
 
+        include RuboCop::RSpec::Structure::JevIntegration
+
+        include RuboCop::RSpec::Structure::DiffScoping
+
         MSG: ::String
 
         MSG_WITH_PROBABILITY: ::String
@@ -40,8 +44,6 @@ module RuboCop
         # clause that merely elaborates on the OUTCOME itself (false), even when neither
         # uses an explicit when/if/の場合 token.
         JEV_CRITERIA: untyped
-
-        @type_safe_client: untyped
 
         @heuristic: RuboCop::RSpec::Structure::ConditionHeuristic
 
@@ -59,59 +61,6 @@ module RuboCop
         def out_of_scope?: (RuboCop::AST::Node node) -> bool
 
         def heuristic: () -> RuboCop::RSpec::Structure::ConditionHeuristic
-
-        # @rbs text: String
-        def jev_probability: (String text) -> Float?
-
-        # @rbs error: StandardError
-        def handle_jev_error: (StandardError error) -> void
-
-        # @rbs api_key: String
-        def type_safe_client: (String api_key) -> untyped
-
-        # @rbs api_key: String
-        def build_type_safe_client: (String api_key) -> untyped
-
-        def type_safe_api_key: () -> String?
-
-        def check_scope: () -> String
-
-        def diff_scope: () -> RuboCop::RSpec::Structure::GitDiffScope
-
-        def diff_base: () -> String
-
-        # Used to build both the Client (its model param) and the Cache
-        # wrapping it (part of its cache key), so it earns a name instead
-        # of two identical `cop_config.fetch` calls.
-        def model: () -> String
-
-        def cache_path: () -> String
-
-        # A Jev judgment is a pure function of (description, prompt, model), so it is
-        # equally valid for every project on this machine, not just the current one.
-        # Following the XDG Base Directory Specification (rather than a path under
-        # this project) lets that cache be shared across all of them.
-        def default_cache_path: () -> String
-
-        # Falls back to a project-relative path when the home directory can't be
-        # resolved at all, e.g. a minimal container running as an arbitrary UID
-        # with no matching passwd entry.
-        def cache_home: () -> String
-
-        # Dir.home consults $HOME first, then falls back to the OS user database
-        # (e.g. /etc/passwd), which is more robust than reading ENV["HOME"] alone.
-        # It raises ArgumentError when neither resolves.
-        def user_home: () -> String?
-
-        # A config value that can also be overridden by an environment variable,
-        # which always wins when set. `cop_config[config_key]` (rather than
-        # `#fetch`) also falls back to `default` when a project's `.rubocop.yml`
-        # sets the key to an explicit nil, since RuboCop's config merging only
-        # drops a nil override when the department default also declares the key.
-        # @rbs env_var: String
-        # @rbs config_key: String
-        # @rbs default: untyped
-        def env_or_config: (String env_var, String config_key, untyped default) -> untyped
       end
     end
   end
