@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-21
+
 - Add `RSpecStructure/AsymmetricContexts`, which flags a `context`
   describing one branch of an externally observable condition that has
   no sibling `context` for its natural counterpart. A lone context with
