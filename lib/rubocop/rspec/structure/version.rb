@@ -3,7 +3,7 @@
 module RuboCop
   module RSpec
     module Structure
-      VERSION = "0.1.0"
+      VERSION = "1.0.0"
     end
   end
 end
