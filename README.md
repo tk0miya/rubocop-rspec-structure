@@ -301,7 +301,6 @@ RSpecStructure/ConditionInExample:
     - when
     - if
     - in case
-    - given that
   CheckScope: diff # diff | full
   DiffBase: auto
   JevThreshold: 0.6

@@ -42,7 +42,6 @@ RSpecStructure/ConditionInExample:
     - when
     - if
     - in case
-    - given that
   Model: jev-latest
   JevThreshold: 0.6
   JevTimeoutSeconds: 5
