@@ -36,6 +36,17 @@ module RuboCop
       # signaling that the tree may need restructuring; it only surfaces
       # the individual gaps, not the restructuring itself.
       #
+      # A group that also generates `context` blocks dynamically — e.g. a
+      # `TYPES.each do |type| context "..." do ... end end` loop sitting
+      # alongside a single static `context` — skips only the solitary
+      # check for that context: its real siblings live inside the loop
+      # body, invisible to a per-statement AST walk, so declaring it alone
+      # would be wrong. Two or more static siblings are still compared to
+      # each other by Jev as usual, whether or not such a loop is also
+      # present: that comparison only looks at the static siblings named
+      # in it, so an unrelated loop elsewhere in the same group doesn't
+      # make it any less meaningful.
+      #
       # @example
       #   # bad - "when the user is logged in" is missing
       #   describe "#dashboard" do
@@ -154,6 +165,8 @@ module RuboCop
           return if siblings.empty?
 
           if siblings.size == 1
+            return if dynamic_context_generator?(node)
+
             solitary = siblings.first #: RuboCop::AST::BlockNode
             add_offense(solitary.send_node, message: MSG_SOLITARY)
             return
@@ -172,11 +185,29 @@ module RuboCop
         # this structural count.
         # @rbs node: RuboCop::AST::BlockNode
         def direct_context_siblings(node) #: Array[RuboCop::AST::BlockNode]
+          top_level_statements(node).select { _1.block_type? && context_family?(_1) } #: Array[RuboCop::AST::BlockNode]
+        end
+
+        # A top-level statement that is itself some other block call (an
+        # `each`-style iteration, typically) and wraps a `context`-family
+        # block somewhere inside it, however deeply nested, is treated as
+        # generating an unknown number of contexts at runtime.
+        # @rbs node: RuboCop::AST::BlockNode
+        def dynamic_context_generator?(node) #: bool
+          top_level_statements(node).any? do |stmt|
+            stmt.block_type? && !context_family?(stmt) &&
+              stmt.each_descendant(:block).any? { context_family?(_1) }
+          end
+        end
+
+        # A body with a single statement isn't wrapped in a `begin` node,
+        # so that case is handled separately from the multi-statement one.
+        # @rbs node: RuboCop::AST::BlockNode
+        def top_level_statements(node) #: Array[RuboCop::AST::Node]
           body = node.body
           return [] unless body
 
-          statements = body.begin_type? ? body.children : [body]
-          statements.select { _1.block_type? && context_family?(_1) } #: Array[RuboCop::AST::BlockNode]
+          body.begin_type? ? body.children : [body]
         end
 
         # @rbs node: RuboCop::AST::BlockNode
