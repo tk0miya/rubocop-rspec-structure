@@ -117,7 +117,18 @@ end
 
 1. A cheap, always-on keyword check runs first (`ConditionKeywords`,
    Japanese and English by default). If it matches, that's the offense —
-   no network call is made.
+   no network call is made. A keyword touching a hyphen, slash, colon,
+   or quote mark on either side (`if-node`, `if/end`, `"if" branch`,
+   `:if`, `if:`) doesn't count as a match: that's a reference to an
+   identifier or literal token, not the word used in prose. Bracket-type
+   characters (`(`, `[`, ...) are deliberately excluded from this list,
+   since a real condition is commonly parenthesized ("raises an error
+   (if the input is invalid)"). This is a purely orthographic check,
+   independent of which keyword or domain it is — it does not try to
+   recognize specific domain vocabulary (e.g. a bare `if node`, with no
+   punctuation, still counts as a match; a project whose specs are dense
+   with that kind of phrasing should override `ConditionKeywords` for
+   itself, or rely on Jev below).
 2. If the keyword check finds nothing **and** a `TYPESAFE_API_KEY`
    environment variable is set, the description is also judged
    semantically by [Jev][jev], the first
