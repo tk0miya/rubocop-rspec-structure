@@ -9,6 +9,8 @@ bad:
   - when the user is an admin, allows deletion
   - if the record is missing, raises an error
   - shows a warning in case the disk is nearly full
+  # A parenthesized condition is still a real one.
+  - raises an error (if the input is invalid)
 good:
   - 削除できる
   - ログイン画面にリダイレクトされる
@@ -18,3 +20,11 @@ good:
   - shows a warning about disk usage
   - ときめきを覚える
   - ひとときの休息を得る
+  # A keyword touching a hyphen, slash, colon, or quote mark is a
+  # reference to an identifier/literal token, not a condition written
+  # in prose.
+  - sets type to :if for the node
+  - collects the if-node and end-node
+  - collects the if/end nodes
+  - handles the "if" branch specially
+  - handles the 'when' branch specially

@@ -16,6 +16,18 @@ module RuboCop
         # kanji. Range covers CJK Unified Ideographs + Extension A.
         UNICODE_KANJI_RANGE = "㐀-鿿"
 
+        # A keyword touching a hyphen, slash, colon, or quote mark on
+        # either side (`if-node`, `if/end`, `"if" branch`, `:if`, `if:`)
+        # is being referenced as an identifier or literal token, not used
+        # as an English word in prose — a real condition is never written
+        # that way. This is a purely orthographic signal, independent of
+        # which keyword or domain it is, so it needs no per-word or
+        # per-domain exceptions. Bracket-type characters (`(`, `[`, ...)
+        # are deliberately not included: a real condition is commonly
+        # parenthesized ("raises an error (if the input is invalid)"),
+        # so treating them the same way would silently miss it.
+        SYMBOL_ADJACENCY = '["\'`:/-]'
+
         # @rbs keywords: Array[String]
         def initialize(keywords:) #: void
           @pattern = build_pattern(keywords)
@@ -42,7 +54,7 @@ module RuboCop
         # @rbs keyword: String
         def pattern_for(keyword) #: Regexp
           if keyword.match?(/\A[a-zA-Z ]+\z/)
-            /\b#{Regexp.escape(keyword)}\b/i
+            /(?<!#{SYMBOL_ADJACENCY})\b#{Regexp.escape(keyword)}\b(?!#{SYMBOL_ADJACENCY})/i
           else
             /(?<![#{UNICODE_KANJI_RANGE}])#{Regexp.escape(keyword)}/
           end

@@ -60,6 +60,36 @@ RSpec.describe RuboCop::RSpec::Structure::ConditionHeuristic do
         expect(heuristic).not_to be_condition("allows deletion")
       end
     end
+
+    context "when a keyword touches a hyphen" do
+      it "does not match" do
+        expect(heuristic).not_to be_condition("collects the if-node and end-node")
+      end
+    end
+
+    context "when a keyword is enclosed in quotes" do
+      it "does not match" do
+        expect(heuristic).not_to be_condition('handles the "if" branch specially')
+      end
+    end
+
+    context "when a keyword is preceded by a colon (a Ruby symbol literal)" do
+      it "does not match" do
+        expect(heuristic).not_to be_condition("sets type to :if for the node")
+      end
+    end
+
+    context "when a keyword touches a slash" do
+      it "does not match" do
+        expect(heuristic).not_to be_condition("collects the if/end nodes")
+      end
+    end
+
+    context "when a keyword is parenthesized" do
+      it "still matches" do
+        expect(heuristic).to be_condition("raises an error (if the input is invalid)")
+      end
+    end
   end
 
   context "with an empty keyword list" do
