@@ -84,6 +84,15 @@ sibling is judged independently, so several offenses can fire together on
 the same flat sibling list — read that as a hint the tree may need
 restructuring, not as separate, unrelated findings.
 
+A group that also generates `context` blocks **dynamically inside a
+loop** (e.g. `TYPES.each do |type| context "..." do ... end end`
+alongside a single static `context`) skips only the **solitary check**
+for that context: its real siblings live inside the loop body, invisible
+to a per-statement AST walk, so declaring it alone would be wrong. Two or
+more static siblings are still compared to each other by Jev as usual
+regardless of such a loop, since that comparison only looks at the
+static siblings named in it.
+
 ## `RSpecStructure/ConditionInExample`
 
 Flags `it`/`example` descriptions that describe an execution condition

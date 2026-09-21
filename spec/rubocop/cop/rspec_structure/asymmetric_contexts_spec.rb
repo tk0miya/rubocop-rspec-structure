@@ -367,6 +367,48 @@ RSpec.describe RuboCop::Cop::RSpecStructure::AsymmetricContexts, :config do
     end
   end
 
+  context "when the group also generates context blocks dynamically inside a loop" do
+    context "with a lone static context alongside the loop" do
+      it "does not flag it as solitary" do
+        expect_no_offenses(<<~RUBY)
+          describe "#reopen" do
+            context "when the reopening block takes a parameter" do
+            end
+
+            TYPES.each do |type|
+              context "when reopening a \#{type}" do
+              end
+            end
+          end
+        RUBY
+      end
+    end
+
+    context "with two or more static contexts alongside the loop" do
+      it "still compares them against each other via Jev, unaffected by the unrelated loop" do
+        ENV["TYPESAFE_API_KEY"] = "dummy"
+        stub_type_safe_client(FakeTypeSafeClient.new(probability: 0.9))
+
+        expect_offense(<<~RUBY)
+          describe "#reopen" do
+            context "when the user is not logged in" do
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ This context describes a condition with no sibling context for its natural counterpart (estimated probability: 0.90). Add a `context` for the complementary case, or move existing coverage of it into this tree.
+            end
+
+            context "when the request body is malformed" do
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ This context describes a condition with no sibling context for its natural counterpart (estimated probability: 0.90). Add a `context` for the complementary case, or move existing coverage of it into this tree.
+            end
+
+            TYPES.each do |type|
+              context "when reopening a \#{type}" do
+              end
+            end
+          end
+        RUBY
+      end
+    end
+  end
+
   context "when a shared group has exactly one context directly nested" do
     it "flags it the same way as any other group" do
       expect_offense(<<~RUBY)
