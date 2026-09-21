@@ -117,26 +117,22 @@ end
 
 1. A cheap, always-on keyword check runs first (`ConditionKeywords`,
    Japanese and English by default). If it matches, that's the offense —
-   no network call is made. A keyword touching a hyphen, slash, colon,
-   or quote mark (including a backtick) on either side (`if-node`,
-   `if/end`, `"if" branch`, `` `if` ``, `:if`, `if:`) doesn't count as a
-   match: that's a reference to an identifier or literal token, not the
-   word used in prose. Bracket-type characters (`(`, `[`, ...) are
-   deliberately excluded from this list, since a real condition is
-   commonly parenthesized ("raises an error (if the input is invalid)").
-   This is a purely orthographic check, independent of which keyword or
-   domain it is — it does not try to recognize specific domain
-   vocabulary (e.g. a bare `if node`, with no punctuation, still counts
-   as a match).
-
-   **If your project's specs are dense with that kind of phrasing**
-   (parsers, cops, and other AST-walking gems tend to write things like
-   `"collects the if node"` or `"handles the when branch"`), wrap the
-   word in backticks — `` "collects the `if` node" `` — to mark it as a
-   syntax reference rather than a condition. This needs no config
-   change and works today. Overriding `ConditionKeywords` for the
-   project, or relying on Jev below, are the alternatives if rewording
-   every description this way isn't practical.
+   no network call is made. Parsers, cops, and other AST-walking gems
+   tend to write descriptions like `"collects the if node"` or
+   `"handles the when branch"`, where the keyword names a Ruby syntax
+   element rather than introducing a condition — if that's your project,
+   wrap the word in backticks, quotes, or a hyphen — `` "collects the
+   `if` node" ``, `"if" branch`, `if-node` — to mark it as a syntax
+   reference rather than a condition. A keyword touching one of those,
+   a slash, or a colon on either side doesn't count as a match; this
+   needs no config change and works today. Bracket-type characters
+   (`(`, `[`, ...) are deliberately excluded from this list, since a
+   real condition is commonly parenthesized ("raises an error (if the
+   input is invalid)"). This is a purely orthographic check, independent
+   of which keyword or domain it is — a bare `if node`, with no
+   punctuation, still counts as a match. Overriding `ConditionKeywords`
+   for the project, or relying on Jev below, are the alternatives if
+   rewording every description this way isn't practical.
 2. If the keyword check finds nothing **and** a `TYPESAFE_API_KEY`
    environment variable is set, the description is also judged
    semantically by [Jev][jev], the first
