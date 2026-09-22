@@ -248,7 +248,9 @@ module RuboCop
 
           threshold = cop_config.fetch("JevThreshold", 0.7)
           items = entries.map do |entry|
-            { id: entry[:id], state: entry[:state], instructions: JEV_INSTRUCTIONS, criteria: JEV_CRITERIA }
+            RuboCop::RSpec::Structure::TypeSafe::NoulQuestion.new(
+              id: entry[:id], state: entry[:state], instructions: JEV_INSTRUCTIONS, criteria: JEV_CRITERIA
+            )
           end
           probabilities = jev_probabilities(items)
 

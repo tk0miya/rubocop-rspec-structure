@@ -5,7 +5,9 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Client do
 
   let(:http) { instance_double(Net::HTTP) }
   let(:item) do
-    { id: "result", state: "when the user is an admin", instructions: "does this describe a condition?", criteria: nil }
+    noul_question(
+      id: "result", state: "when the user is an admin", instructions: "does this describe a condition?", criteria: nil
+    )
   end
 
   before do
@@ -13,6 +15,10 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Client do
     allow(http).to receive(:use_ssl=)
     allow(http).to receive(:open_timeout=)
     allow(http).to receive(:read_timeout=)
+  end
+
+  def noul_question(**attrs)
+    RuboCop::RSpec::Structure::TypeSafe::NoulQuestion.new(**attrs)
   end
 
   describe "#nouls" do
@@ -82,8 +88,8 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Client do
 
         probabilities = client.nouls(
           [
-            { id: "a", state: "state a", instructions: "instructions a", criteria: nil },
-            { id: "b", state: "state b", instructions: "instructions b", criteria: nil }
+            noul_question(id: "a", state: "state a", instructions: "instructions a", criteria: nil),
+            noul_question(id: "b", state: "state b", instructions: "instructions b", criteria: nil)
           ]
         )
 
@@ -102,7 +108,7 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Client do
         allow(request).to receive(:body=) { sent_body = _1 }
         allow(http).to receive(:request).with(request).and_return(response)
 
-        client.nouls([{ id: "a", state: "state a", instructions: "instructions a", criteria: nil }])
+        client.nouls([noul_question(id: "a", state: "state a", instructions: "instructions a", criteria: nil)])
 
         payload = JSON.parse(sent_body)
         expect(payload["state"]).to eq("")
@@ -119,8 +125,8 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Client do
         expect do
           client.nouls(
             [
-              { id: "a", state: "s", instructions: "i", criteria: nil },
-              { id: "b", state: "s", instructions: "i", criteria: nil }
+              noul_question(id: "a", state: "s", instructions: "i", criteria: nil),
+              noul_question(id: "b", state: "s", instructions: "i", criteria: nil)
             ]
           )
         end.to raise_error(described_class::RequestError, /missing/)

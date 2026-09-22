@@ -192,7 +192,7 @@ RSpec.describe RuboCop::Cop::RSpecStructure::ConditionInExample, :config do
       it "batches them into a single call to the client's #nouls" do
         client = instance_double(RuboCop::RSpec::Structure::TypeSafe::Client)
         allow(RuboCop::RSpec::Structure::TypeSafe::Client).to receive(:new).and_return(client)
-        allow(client).to receive(:nouls) { |items| items.to_h { [_1[:id], 0.9] } }
+        allow(client).to receive(:nouls) { |items| items.to_h { [_1.id, 0.9] } }
 
         expect_offense(<<~RUBY)
           it "admin users can delete records" do

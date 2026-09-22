@@ -9,8 +9,8 @@ module RuboCop
         # interface so callers can always ask a client for judgments
         # without first checking whether one is actually available.
         class NullClient
-          # @rbs items: Array[Hash[Symbol, untyped]]
-          def nouls: (Array[Hash[Symbol, untyped]] items) -> Hash[String, Float]
+          # @rbs items: Array[NoulQuestion]
+          def nouls: (Array[NoulQuestion] items) -> Hash[String, Float]
         end
       end
     end

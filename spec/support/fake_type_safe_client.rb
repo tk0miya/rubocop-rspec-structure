@@ -17,11 +17,13 @@ class FakeTypeSafeClient
 
   def nouls(items)
     items.to_h do |item|
-      state, instructions, criteria = item.values_at(:state, :instructions, :criteria)
+      state = item.state
+      instructions = item.instructions
+      criteria = item.criteria
       @calls << { state:, instructions:, criteria: }
       raise @error if @error
 
-      [item[:id], resolve_probability(state:, instructions:, criteria:)]
+      [item.id, resolve_probability(state:, instructions:, criteria:)]
     end
   end
 

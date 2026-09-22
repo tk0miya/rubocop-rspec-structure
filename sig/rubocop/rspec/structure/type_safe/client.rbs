@@ -37,8 +37,8 @@ module RuboCop
           # independently verified against the live API by this gem, so
           # treat it as the working assumption behind this method, not a
           # guarantee.
-          # @rbs items: Array[Hash[Symbol, untyped]]
-          def nouls: (Array[Hash[Symbol, untyped]] items) -> Hash[String, Float]
+          # @rbs items: Array[NoulQuestion]
+          def nouls: (Array[NoulQuestion] items) -> Hash[String, Float]
 
           private
 
@@ -48,11 +48,11 @@ module RuboCop
 
           attr_reader timeout: Integer
 
-          # @rbs items: Array[Hash[Symbol, untyped]]
-          def batch_request_body: (Array[Hash[Symbol, untyped]] items) -> Hash[Symbol, untyped]
+          # @rbs items: Array[NoulQuestion]
+          def batch_request_body: (Array[NoulQuestion] items) -> Hash[Symbol, untyped]
 
-          # @rbs item: Hash[Symbol, untyped]
-          def batched_question: (Hash[Symbol, untyped] item) -> Hash[Symbol, untyped]
+          # @rbs item: NoulQuestion
+          def batched_question: (NoulQuestion item) -> Hash[Symbol, untyped]
 
           # @rbs body: Hash[Symbol, untyped]
           def post: (Hash[Symbol, untyped] body) -> Hash[String, untyped]
