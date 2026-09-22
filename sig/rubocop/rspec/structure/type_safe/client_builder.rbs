@@ -1,0 +1,39 @@
+# Generated from lib/rubocop/rspec/structure/type_safe/client_builder.rb with RBS::Inline
+
+module RuboCop
+  module RSpec
+    module Structure
+      module TypeSafe
+        interface _Client
+          def nouls: (Array[NoulQuestion] items) -> Hash[String, Float]
+        end
+
+        # Builds the client a cop uses to ask Jev questions: a NullClient
+        # when there's no API key configured, a plain Client otherwise, or
+        # a Cache-wrapped Client when CacheEnabled (the default, resolved
+        # from `cop_config`). Isolating this from the cop lets it be built
+        # and tested on its own, independent of any particular cop's other
+        # concerns.
+        class ClientBuilder
+          # @rbs cop_config: Hash[String, untyped]
+          def initialize: (Hash[String, untyped] cop_config) -> void
+
+          def build: () -> _Client
+
+          private
+
+          attr_reader cop_config: Hash[String, untyped]
+
+          def type_safe_api_key: () -> String?
+
+          # Same env-wins-over-config precedence as
+          # `ConfigOverride#env_or_config`, reimplemented here rather than
+          # shared: that module assumes an including `RuboCop::Cop::Base`'s
+          # ambient `cop_config`, which this plain builder deliberately
+          # isn't.
+          def cache_path: () -> String?
+        end
+      end
+    end
+  end
+end

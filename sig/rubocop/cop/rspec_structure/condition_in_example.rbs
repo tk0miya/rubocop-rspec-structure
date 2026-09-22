@@ -30,8 +30,6 @@ module RuboCop
 
         include RuboCop::RSpec::Structure::RequiresRuboCopRspec
 
-        include RuboCop::RSpec::Structure::JevIntegration
-
         include RuboCop::RSpec::Structure::DiffScoping
 
         MSG: ::String
@@ -44,6 +42,8 @@ module RuboCop
         # clause that merely elaborates on the OUTCOME itself (false), even when neither
         # uses an explicit when/if/の場合 token.
         JEV_CRITERIA: untyped
+
+        @client: RuboCop::RSpec::Structure::TypeSafe::_Client
 
         @heuristic: RuboCop::RSpec::Structure::ConditionHeuristic
 
@@ -73,6 +73,21 @@ module RuboCop
         # call, then walks the results back onto their own description
         # nodes.
         def check_descriptions: () -> void
+
+        # Resolves a batch of independent Noul questions in one call. The
+        # result is a `{id => probability}` hash. Returns `{}` when there's
+        # no API key configured — `client` hands back a `NullClient` rather
+        # than ever touching the network — or when the call errors and
+        # `OnJevError` doesn't re-raise. The caller can't tell those two
+        # "no answer" cases apart, by design: either way, there's nothing
+        # to do but skip.
+        # @rbs items: Array[RuboCop::RSpec::Structure::TypeSafe::NoulQuestion]
+        def jev_probabilities: (Array[RuboCop::RSpec::Structure::TypeSafe::NoulQuestion] items) -> Hash[String, Float]
+
+        # @rbs error: StandardError
+        def handle_jev_error: (StandardError error) -> void
+
+        def client: () -> RuboCop::RSpec::Structure::TypeSafe::_Client
 
         # @rbs node: RuboCop::AST::Node
         def out_of_scope?: (RuboCop::AST::Node node) -> bool

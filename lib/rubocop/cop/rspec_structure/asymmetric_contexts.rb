@@ -79,7 +79,6 @@ module RuboCop
       class AsymmetricContexts < Base
         include RuboCop::RSpec::Language
         include RuboCop::RSpec::Structure::RequiresRuboCopRspec
-        include RuboCop::RSpec::Structure::JevIntegration
         include RuboCop::RSpec::Structure::DiffScoping
 
         MSG_SOLITARY =
@@ -191,6 +190,8 @@ module RuboCop
 
         private
 
+        # @rbs @client: RuboCop::RSpec::Structure::TypeSafe::_Client
+
         attr_reader :contexts #: Array[Hash[Symbol, untyped]]
 
         # Only the block's own top-level statements count, and only those
@@ -260,6 +261,37 @@ module RuboCop
 
             add_offense(entry[:target].send_node, message: format(MSG_ASYMMETRIC, probability:))
           end
+        end
+
+        # Resolves a batch of independent Noul questions in one call. The
+        # result is a `{id => probability}` hash. Returns `{}` when there's
+        # no API key configured — `client` hands back a `NullClient` rather
+        # than ever touching the network — or when the call errors and
+        # `OnJevError` doesn't re-raise. The caller can't tell those two
+        # "no answer" cases apart, by design: either way, there's nothing
+        # to do but skip.
+        # @rbs items: Array[RuboCop::RSpec::Structure::TypeSafe::NoulQuestion]
+        def jev_probabilities(items) #: Hash[String, Float]
+          return {} if items.empty?
+
+          client.nouls(items)
+        rescue RuboCop::RSpec::Structure::TypeSafe::Error => e
+          handle_jev_error(e)
+          {}
+        end
+
+        # @rbs error: StandardError
+        def handle_jev_error(error) #: void
+          case cop_config.fetch("OnJevError", "skip")
+          when "raise"
+            raise error
+          when "warn"
+            warn("rubocop-rspec-structure: TypeSafe API error: #{error.message}")
+          end
+        end
+
+        def client #: RuboCop::RSpec::Structure::TypeSafe::_Client
+          @client ||= RuboCop::RSpec::Structure::TypeSafe::ClientBuilder.new(cop_config).build
         end
 
         # @rbs target: RuboCop::AST::BlockNode

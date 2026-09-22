@@ -7,7 +7,7 @@ module RuboCop
         # Base class for anything that keeps a Noul judgment from being
         # obtained once a client call is actually attempted: a network
         # failure or a malformed response. A missing API key never reaches
-        # this class — `JevIntegration` hands out a `NullClient` instead of
+        # this class — `ClientBuilder` hands out a `NullClient` instead of
         # calling a real client at all in that case. Callers can rescue this
         # single class regardless of which client implementation raised it.
         class Error < StandardError; end
