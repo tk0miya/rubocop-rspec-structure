@@ -1,0 +1,24 @@
+# frozen_string_literal: true
+
+module RuboCop
+  module RSpec
+    module Structure
+      module TypeSafe
+        # Null Object standing in for Client/Cache when no API key is
+        # configured. Shares their `nouls(items) -> Hash[String, Float]`
+        # interface so callers can always ask a client for judgments
+        # without first checking whether one is actually available.
+        class NullClient
+          # rubocop:disable Lint/UnusedMethodArgument
+
+          # @rbs items: Array[Hash[Symbol, untyped]]
+          def nouls(items) #: Hash[String, Float]
+            {}
+          end
+
+          # rubocop:enable Lint/UnusedMethodArgument
+        end
+      end
+    end
+  end
+end
