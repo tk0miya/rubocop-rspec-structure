@@ -7,45 +7,113 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Cache do
   let(:cache_path) { File.join(tmpdir, "jev_cache.json") }
   let(:tmpdir) { Dir.mktmpdir }
   let(:cache) { described_class.new(client: inner_client, model: "jev-latest", path: cache_path) }
+  let(:item) { { id: "a", state: "when the user is an admin", instructions: "instructions", criteria: nil } }
 
   after { FileUtils.remove_entry(tmpdir) }
 
-  context "when there is a cache miss" do
-    it "delegates to the client" do
-      probability = cache.noul(state: "when the user is an admin", instructions: "instructions")
+  describe "#nouls" do
+    context "when there is a cache miss" do
+      it "delegates to the client" do
+        probabilities = cache.nouls([item])
 
-      expect(probability).to eq(0.8)
-      expect(inner_client.calls.size).to eq(1)
+        expect(probabilities).to eq({ "a" => 0.8 })
+        expect(inner_client.calls.size).to eq(1)
+      end
     end
-  end
 
-  context "when the cache already has an entry" do
-    it "returns the cached result without calling the client again" do
-      cache.noul(state: "when the user is an admin", instructions: "instructions")
-      probability = cache.noul(state: "when the user is an admin", instructions: "instructions")
+    context "when the cache already has an entry" do
+      it "returns the cached result without calling the client again" do
+        cache.nouls([item])
+        probabilities = cache.nouls([item])
 
-      expect(probability).to eq(0.8)
-      expect(inner_client.calls.size).to eq(1)
+        expect(probabilities).to eq({ "a" => 0.8 })
+        expect(inner_client.calls.size).to eq(1)
+      end
     end
-  end
 
-  context "when a new instance loads the same cache file" do
-    it "reuses the persisted cache without calling the client again" do
-      cache.noul(state: "when the user is an admin", instructions: "instructions")
+    context "when a new instance loads the same cache file" do
+      it "reuses the persisted cache without calling the client again" do
+        cache.nouls([item])
 
-      reloaded = described_class.new(client: inner_client, model: "jev-latest", path: cache_path)
-      reloaded.noul(state: "when the user is an admin", instructions: "instructions")
+        reloaded = described_class.new(client: inner_client, model: "jev-latest", path: cache_path)
+        reloaded.nouls([item])
 
-      expect(inner_client.calls.size).to eq(1)
+        expect(inner_client.calls.size).to eq(1)
+      end
+    end
+
+    context "when every item is a cache miss" do
+      it "delegates all of them to the client" do
+        probabilities = cache.nouls(
+          [
+            { id: "a", state: "state a", instructions: "instructions", criteria: nil },
+            { id: "b", state: "state b", instructions: "instructions", criteria: nil }
+          ]
+        )
+
+        expect(probabilities).to eq({ "a" => 0.8, "b" => 0.8 })
+        expect(inner_client.calls.size).to eq(2)
+      end
+    end
+
+    context "when the client can prove how many times it was called" do
+      it "passes every miss to a single call to the client's #nouls" do
+        spy_client = instance_double(RuboCop::RSpec::Structure::TypeSafe::Client)
+        allow(spy_client).to receive(:nouls) { |items| items.to_h { [_1[:id], 0.8] } }
+        cache_with_spy = described_class.new(client: spy_client, model: "jev-latest", path: cache_path)
+
+        cache_with_spy.nouls(
+          [
+            { id: "a", state: "state a", instructions: "instructions", criteria: nil },
+            { id: "b", state: "state b", instructions: "instructions", criteria: nil }
+          ]
+        )
+
+        expect(spy_client).to have_received(:nouls).once
+      end
+    end
+
+    context "when some items are already cached" do
+      it "only sends the misses to the client" do
+        cache.nouls([{ id: "a", state: "state a", instructions: "instructions", criteria: nil }])
+
+        probabilities = cache.nouls(
+          [
+            { id: "a", state: "state a", instructions: "instructions", criteria: nil },
+            { id: "b", state: "state b", instructions: "instructions", criteria: nil }
+          ]
+        )
+
+        expect(probabilities).to eq({ "a" => 0.8, "b" => 0.8 })
+        expect(inner_client.calls.size).to eq(2)
+      end
+    end
+
+    context "when every item is already cached" do
+      it "returns the cached results without calling the client" do
+        cache.nouls([{ id: "a", state: "state a", instructions: "instructions", criteria: nil }])
+        cache.nouls([{ id: "b", state: "state b", instructions: "instructions", criteria: nil }])
+        inner_client.calls.clear
+
+        probabilities = cache.nouls(
+          [
+            { id: "a", state: "state a", instructions: "instructions", criteria: nil },
+            { id: "b", state: "state b", instructions: "instructions", criteria: nil }
+          ]
+        )
+
+        expect(probabilities).to eq({ "a" => 0.8, "b" => 0.8 })
+        expect(inner_client.calls).to be_empty
+      end
     end
   end
 
   context "when a different model is used" do
     it "treats it as a different cache entry" do
-      cache.noul(state: "when the user is an admin", instructions: "instructions")
+      cache.nouls([item])
 
       other = described_class.new(client: inner_client, model: "jev-2", path: cache_path)
-      other.noul(state: "when the user is an admin", instructions: "instructions")
+      other.nouls([item])
 
       expect(inner_client.calls.size).to eq(2)
     end
@@ -62,7 +130,7 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Cache do
     end
 
     # Observes where the resolved default actually gets written, through
-    # the public `#noul` API, rather than reaching into the private
+    # the public `#nouls` API, rather than reaching into the private
     # `default_path` method or `@path` directly.
     def expect_default_path(path)
       allow(File).to receive(:exist?).and_return(false)
@@ -70,7 +138,7 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Cache do
       allow(File).to receive(:write)
 
       described_class.new(client: inner_client, model: "jev-latest")
-                     .noul(state: "when the user is an admin", instructions: "instructions")
+                     .nouls([item])
 
       expect(File).to have_received(:write).with(path, anything)
     end

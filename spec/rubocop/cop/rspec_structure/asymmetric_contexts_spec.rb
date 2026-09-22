@@ -172,11 +172,13 @@ RSpec.describe RuboCop::Cop::RSpecStructure::AsymmetricContexts, :config do
         it "flags only that sibling" do
           client = instance_double(RuboCop::RSpec::Structure::TypeSafe::Client)
           allow(RuboCop::RSpec::Structure::TypeSafe::Client).to receive(:new).and_return(client)
-          allow(client).to receive(:noul) do |state:, **|
-            # Only the first line names the target being judged; "payment succeeds"
-            # would also appear on a later line when it's listed as someone else's
-            # sibling, so checking the whole state would wrongly match both targets.
-            state.lines.first.include?("payment succeeds") ? 0.9 : 0.1
+          allow(client).to receive(:nouls) do |items|
+            items.to_h do |item|
+              # Only the first line names the target being judged; "payment succeeds"
+              # would also appear on a later line when it's listed as someone else's
+              # sibling, so checking the whole state would wrongly match both targets.
+              [item[:id], item[:state].lines.first.include?("payment succeeds") ? 0.9 : 0.1]
+            end
           end
 
           expect_offense(<<~RUBY)
@@ -189,6 +191,28 @@ RSpec.describe RuboCop::Cop::RSpecStructure::AsymmetricContexts, :config do
               end
             end
           RUBY
+        end
+      end
+
+      context "when a file has several contexts that need Jev's judgment" do
+        it "batches them into a single call to the client's #nouls" do
+          client = instance_double(RuboCop::RSpec::Structure::TypeSafe::Client)
+          allow(RuboCop::RSpec::Structure::TypeSafe::Client).to receive(:new).and_return(client)
+          allow(client).to receive(:nouls) { |items| items.to_h { [_1[:id], 0.9] } }
+
+          expect_offense(<<~RUBY)
+            describe "#dashboard" do
+              context "when the user is not logged in" do
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ This context describes a condition with no sibling context for its natural counterpart (estimated probability: 0.90). Add a `context` for the complementary case, or move existing coverage of it into this tree.
+              end
+
+              context "when the request body is malformed" do
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ This context describes a condition with no sibling context for its natural counterpart (estimated probability: 0.90). Add a `context` for the complementary case, or move existing coverage of it into this tree.
+              end
+            end
+          RUBY
+
+          expect(client).to have_received(:nouls).once
         end
       end
 

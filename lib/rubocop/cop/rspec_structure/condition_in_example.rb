@@ -66,6 +66,21 @@ module RuboCop
 
         # @rbs @heuristic: RuboCop::RSpec::Structure::ConditionHeuristic
 
+        # Every description this cop wants Jev's semantic judgment on is
+        # collected here instead of asked about immediately, so the whole
+        # file's worth of them can go out as a single batched call — see
+        # `check_descriptions`, called once this file's traversal
+        # finishes.
+        def on_new_investigation #: void
+          super
+          @descriptions = []
+        end
+
+        def on_investigation_end #: void
+          super
+          check_descriptions
+        end
+
         # @rbs node: RuboCop::AST::BlockNode
         def on_block(node) #: void
           return unless example?(node)
@@ -87,6 +102,8 @@ module RuboCop
 
         private
 
+        attr_reader :descriptions #: Array[Hash[Symbol, untyped]]
+
         # @rbs block_node: RuboCop::AST::BlockNode
         # @rbs description_node: RuboCop::AST::StrNode
         # @rbs text: String
@@ -98,10 +115,29 @@ module RuboCop
             return
           end
 
-          probability = jev_probability(text, instructions: JEV_INSTRUCTIONS, criteria: JEV_CRITERIA)
-          return if probability.nil? || probability < cop_config.fetch("JevThreshold", 0.6)
+          descriptions << { id: descriptions.size.to_s, state: text, description_node: }
+        end
 
-          add_offense(description_node, message: format(MSG_WITH_PROBABILITY, probability:))
+        # Runs once per file, after every `it`/`example` has been visited:
+        # turns the collected descriptions into a single `jev_probabilities`
+        # call, then walks the results back onto their own description
+        # nodes.
+        def check_descriptions #: void
+          entries = descriptions
+          return if entries.empty?
+
+          threshold = cop_config.fetch("JevThreshold", 0.6)
+          items = entries.map do |entry|
+            { id: entry[:id], state: entry[:state], instructions: JEV_INSTRUCTIONS, criteria: JEV_CRITERIA }
+          end
+          probabilities = jev_probabilities(items)
+
+          entries.each do |entry|
+            probability = probabilities[entry[:id]]
+            next if probability.nil? || probability < threshold
+
+            add_offense(entry[:description_node], message: format(MSG_WITH_PROBABILITY, probability:))
+          end
         end
 
         # @rbs node: RuboCop::AST::Node

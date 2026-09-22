@@ -14,10 +14,14 @@ module RuboCop
           # @rbs path: String?
           def initialize: (client: untyped, model: String, ?path: String?) -> void
 
-          # @rbs state: String
-          # @rbs instructions: String
-          # @rbs criteria: Hash[String, String]?
-          def noul: (state: String, instructions: String, ?criteria: Hash[String, String]?) -> Float
+          # Cache-aware batch lookup: items already on disk are served
+          # without touching the client at all, and only the misses go
+          # out, together, as a single call to `client.nouls`. Each item
+          # is still cached under its own (state, instructions, criteria,
+          # model) key — the batching is purely a transport-level detail
+          # the cache itself doesn't need to know about.
+          # @rbs items: Array[Hash[Symbol, untyped]]
+          def nouls: (Array[Hash[Symbol, untyped]] items) -> Hash[String, Float]
 
           private
 
@@ -37,6 +41,22 @@ module RuboCop
           # @rbs instructions: String
           # @rbs criteria: Hash[String, String]?
           def cache_key: (state: String, instructions: String, criteria: Hash[String, String]?) -> String
+
+          # Looks up each item in the on-disk store. A hit resolves
+          # straight to its cached probability; a miss carries its
+          # (not-yet-looked-up) cache key forward, since `store_fetched`
+          # will need it once the client answers. The two aren't the same
+          # shape — a hit is already a final `{id => probability}` value,
+          # a miss is still the original item plus that key — so this
+          # isn't a same-type partition, just a single pass over `items`
+          # that buckets each one into whichever of the two it resolves
+          # to.
+          # @rbs items: Array[Hash[Symbol, untyped]]
+          def split_hits_and_misses: (Array[Hash[Symbol, untyped]] items) -> [ Hash[String, Float], Array[Hash[Symbol, untyped]] ]
+
+          # @rbs misses: Array[Hash[Symbol, untyped]]
+          # @rbs fetched: Hash[String, Float]
+          def store_fetched: (Array[Hash[Symbol, untyped]] misses, Hash[String, Float] fetched) -> void
 
           # A Jev judgment is a pure function of (state, instructions,
           # criteria, model), so it is equally valid for every project on

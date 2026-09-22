@@ -9,8 +9,8 @@ module RuboCop
     module Structure
       module TypeSafe
         # Thin HTTP client for TypeSafe AI's System One API
-        # (https://docs.typesafe.ai). Sends a single Noul (yes/no) question
-        # and returns the probability that the answer is yes.
+        # (https://docs.typesafe.ai). Sends one or more Noul (yes/no)
+        # questions and returns the probability that each answer is yes.
         #
         # Deliberately built on Net::HTTP rather than a third-party HTTP gem:
         # this gem is loaded into every consumer's Gemfile, and pulling in
@@ -18,7 +18,6 @@ module RuboCop
         # pins. A single JSON endpoint does not need more than the stdlib.
         class Client
           ENDPOINT = URI("https://api.typesafe.ai/v1/systemone")
-          QUESTION_KEY = "result"
 
           class TimeoutError < Error
           end
@@ -35,12 +34,23 @@ module RuboCop
             @timeout = timeout
           end
 
-          # @rbs state: String
-          # @rbs instructions: String
-          # @rbs criteria: Hash[String, String]?
-          def noul(state:, instructions:, criteria: nil) #: Float
-            response = post(request_body(state:, instructions:, criteria:))
-            extract_probability(response)
+          # Batches several independent Noul questions into a single HTTP
+          # call. Each item carries its own `state`, but Jev's wire format
+          # has only one `state` per request, shared by every question in
+          # it — so each item's `state` is folded into that item's own
+          # `instructions` instead, and the request-level `state` is left
+          # empty. This relies on questions running in isolation from
+          # each other against the shared state, as mizchi/jev-
+          # playground's batching reports describe — that claim is not
+          # independently verified against the live API by this gem, so
+          # treat it as the working assumption behind this method, not a
+          # guarantee.
+          # @rbs items: Array[Hash[Symbol, untyped]]
+          def nouls(items) #: Hash[String, Float]
+            return {} if items.empty?
+
+            response = post(batch_request_body(items))
+            items.to_h { [_1[:id], extract_probability(response, _1[:id])] }
           end
 
           private
@@ -49,21 +59,22 @@ module RuboCop
           attr_reader :model #: String
           attr_reader :timeout #: Integer
 
-          # @rbs state: String
-          # @rbs instructions: String
-          # @rbs criteria: Hash[String, String]?
-          def request_body(state:, instructions:, criteria:) #: Hash[Symbol, untyped]
+          # @rbs items: Array[Hash[Symbol, untyped]]
+          def batch_request_body(items) #: Hash[Symbol, untyped]
             {
-              state:,
+              state: "",
               model:,
-              questions: {
-                QUESTION_KEY => {
-                  type: "noul",
-                  instructions:,
-                  criteria:
-                }.compact
-              }
+              questions: items.to_h { [_1[:id], batched_question(_1)] }
             }
+          end
+
+          # @rbs item: Hash[Symbol, untyped]
+          def batched_question(item) #: Hash[Symbol, untyped]
+            {
+              type: "noul",
+              instructions: "#{item[:instructions]}\n\n---\nState:\n#{item[:state]}",
+              criteria: item[:criteria]
+            }.compact
           end
 
           # @rbs body: Hash[Symbol, untyped]
@@ -104,10 +115,11 @@ module RuboCop
           end
 
           # @rbs response: Hash[String, untyped]
-          def extract_probability(response) #: Float
-            probability = response.dig("nouls", QUESTION_KEY, "noul")
+          # @rbs key: String
+          def extract_probability(response, key) #: Float
+            probability = response.dig("nouls", key, "noul")
             unless probability.is_a?(Integer) || probability.is_a?(Float)
-              raise RequestError, "TypeSafe API response missing nouls.#{QUESTION_KEY}.noul"
+              raise RequestError, "TypeSafe API response missing nouls.#{key}.noul"
             end
 
             probability.to_f
