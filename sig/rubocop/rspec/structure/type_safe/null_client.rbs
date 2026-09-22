@@ -5,8 +5,8 @@ module RuboCop
     module Structure
       module TypeSafe
         # Null Object standing in for Client/Cache when no API key is
-        # configured. Shares their `nouls(items) -> Hash[String, Float]`
-        # interface so callers can always ask a client for judgments
+        # configured, satisfying the same `_Client` interface (see
+        # ClientBuilder) so callers can always ask a client for judgments
         # without first checking whether one is actually available.
         class NullClient
           # @rbs items: Array[NoulQuestion]

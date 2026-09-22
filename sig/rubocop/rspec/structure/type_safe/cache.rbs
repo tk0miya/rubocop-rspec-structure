@@ -9,10 +9,10 @@ module RuboCop
         # rubocop runs over unchanged descriptions never pay for a second
         # API call, and the same input always yields the same offense.
         class Cache
-          # @rbs client: untyped
+          # @rbs client: _Client
           # @rbs model: String
           # @rbs path: String?
-          def initialize: (client: untyped, model: String, ?path: String?) -> void
+          def initialize: (client: _Client, model: String, ?path: String?) -> void
 
           # Cache-aware batch lookup: items already on disk are served
           # without touching the client at all, and only the misses go
@@ -25,7 +25,7 @@ module RuboCop
 
           private
 
-          attr_reader client: untyped
+          attr_reader client: _Client
 
           attr_reader model: String
 

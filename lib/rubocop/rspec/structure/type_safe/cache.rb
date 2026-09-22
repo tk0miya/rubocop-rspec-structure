@@ -12,7 +12,7 @@ module RuboCop
         # rubocop runs over unchanged descriptions never pay for a second
         # API call, and the same input always yields the same offense.
         class Cache
-          # @rbs client: untyped
+          # @rbs client: _Client
           # @rbs model: String
           # @rbs path: String?
           def initialize(client:, model:, path: nil) #: void
@@ -41,7 +41,7 @@ module RuboCop
 
           private
 
-          attr_reader :client #: untyped
+          attr_reader :client #: _Client
           attr_reader :model #: String
           attr_reader :path #: String
           attr_reader :store #: Hash[String, Float]
