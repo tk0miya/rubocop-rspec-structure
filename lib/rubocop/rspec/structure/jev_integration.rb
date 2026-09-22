@@ -30,19 +30,17 @@ module RuboCop
 
         # Resolves a batch of independent Noul questions in one call. Each
         # item is `{id:, state:, instructions:, criteria:}`; the result is
-        # a `{id => probability}` hash. Returns `{}` without touching the
-        # client at all when there's no API key configured, or when the
-        # call errors and `OnJevError` doesn't re-raise — the caller can't
-        # tell those two "no answer" cases apart, by design: either way,
-        # there's nothing to do but skip.
+        # a `{id => probability}` hash. Returns `{}` when there's no API
+        # key configured — `type_safe_client` hands back a `NullClient`
+        # rather than ever touching the network — or when the call errors
+        # and `OnJevError` doesn't re-raise. The caller can't tell those
+        # two "no answer" cases apart, by design: either way, there's
+        # nothing to do but skip.
         # @rbs items: Array[Hash[Symbol, untyped]]
         def jev_probabilities(items) #: Hash[String, Float]
           return {} if items.empty?
 
-          api_key = type_safe_api_key
-          return {} unless api_key
-
-          type_safe_client(api_key).nouls(items)
+          type_safe_client.nouls(items)
         rescue RuboCop::RSpec::Structure::TypeSafe::Error => e
           handle_jev_error(e)
           {}
@@ -58,13 +56,14 @@ module RuboCop
           end
         end
 
-        # @rbs api_key: String
-        def type_safe_client(api_key) #: untyped
-          @type_safe_client ||= build_type_safe_client(api_key)
+        def type_safe_client #: untyped
+          @type_safe_client ||= build_type_safe_client
         end
 
-        # @rbs api_key: String
-        def build_type_safe_client(api_key) #: untyped
+        def build_type_safe_client #: untyped
+          api_key = type_safe_api_key
+          return RuboCop::RSpec::Structure::TypeSafe::NullClient.new unless api_key
+
           # Named once here, rather than calling `cop_config.fetch("Model", ...)`
           # a second time below, since it's part of both the Client and the
           # Cache wrapping it (part of its cache key).
