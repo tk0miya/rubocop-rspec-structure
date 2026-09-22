@@ -117,9 +117,9 @@ module RuboCop
           # @rbs response: Hash[String, untyped]
           # @rbs key: String
           def extract_probability(response, key) #: Float
-            probability = response.dig("nouls", key, "noul")
+            probability = response.dig("answers", key, "noul")
             unless probability.is_a?(Integer) || probability.is_a?(Float)
-              raise RequestError, "TypeSafe API response missing nouls.#{key}.noul"
+              raise RequestError, "TypeSafe API response missing answers.#{key}.noul"
             end
 
             probability.to_f
