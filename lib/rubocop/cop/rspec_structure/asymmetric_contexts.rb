@@ -157,6 +157,20 @@ module RuboCop
           (block (send #rspec? {:context :fcontext :xcontext} $(str ...) ...) ...)
         PATTERN
 
+        # Every target context this cop wants Jev's judgment on is
+        # collected here instead of asked about immediately, so the whole
+        # file's worth of them can go out as a single batched call — see
+        # `check_contexts`, called once this file's traversal finishes.
+        def on_new_investigation #: void
+          super
+          @contexts = []
+        end
+
+        def on_investigation_end #: void
+          super
+          check_contexts
+        end
+
         # @rbs node: RuboCop::AST::BlockNode
         def on_block(node) #: void
           return unless spec_group?(node)
@@ -176,6 +190,8 @@ module RuboCop
         end
 
         private
+
+        attr_reader :contexts #: Array[Hash[Symbol, untyped]]
 
         # Only the block's own top-level statements count, and only those
         # that are themselves `context`-family blocks — same
@@ -219,12 +235,28 @@ module RuboCop
 
           comparable.each do |target|
             others = comparable - [target]
-            probability = jev_probability(
-              state_for(target, others), instructions: JEV_INSTRUCTIONS, criteria: JEV_CRITERIA
-            )
-            next if probability.nil? || probability < cop_config.fetch("JevThreshold", 0.7)
+            contexts << { id: contexts.size.to_s, state: state_for(target, others), target: }
+          end
+        end
 
-            add_offense(target.send_node, message: format(MSG_ASYMMETRIC, probability:))
+        # Runs once per file, after every sibling group has been visited:
+        # turns the collected contexts into a single `jev_probabilities`
+        # call, then walks the results back onto their own target contexts.
+        def check_contexts #: void
+          entries = contexts
+          return if entries.empty?
+
+          threshold = cop_config.fetch("JevThreshold", 0.7)
+          items = entries.map do |entry|
+            { id: entry[:id], state: entry[:state], instructions: JEV_INSTRUCTIONS, criteria: JEV_CRITERIA }
+          end
+          probabilities = jev_probabilities(items)
+
+          entries.each do |entry|
+            probability = probabilities[entry[:id]]
+            next if probability.nil? || probability < threshold
+
+            add_offense(entry[:target].send_node, message: format(MSG_ASYMMETRIC, probability:))
           end
         end
 

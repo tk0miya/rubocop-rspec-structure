@@ -188,6 +188,26 @@ RSpec.describe RuboCop::Cop::RSpecStructure::ConditionInExample, :config do
       end
     end
 
+    context "when a file has several descriptions that need Jev's judgment" do
+      it "batches them into a single call to the client's #nouls" do
+        client = instance_double(RuboCop::RSpec::Structure::TypeSafe::Client)
+        allow(RuboCop::RSpec::Structure::TypeSafe::Client).to receive(:new).and_return(client)
+        allow(client).to receive(:nouls) { |items| items.to_h { [_1[:id], 0.9] } }
+
+        expect_offense(<<~RUBY)
+          it "admin users can delete records" do
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Move the condition described here into a surrounding `context` block (estimated probability: 0.90).
+          end
+
+          it "viewer users cannot delete records" do
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Move the condition described here into a surrounding `context` block (estimated probability: 0.90).
+          end
+        RUBY
+
+        expect(client).to have_received(:nouls).once
+      end
+    end
+
     context "when the API call fails" do
       let(:error) { RuboCop::RSpec::Structure::TypeSafe::Client::RequestError.new("boom") }
 

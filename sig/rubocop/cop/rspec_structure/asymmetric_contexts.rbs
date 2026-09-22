@@ -97,10 +97,20 @@ module RuboCop
 
         def context_with_description: (untyped node) -> untyped
 
+        # Every target context this cop wants Jev's judgment on is
+        # collected here instead of asked about immediately, so the whole
+        # file's worth of them can go out as a single batched call — see
+        # `check_contexts`, called once this file's traversal finishes.
+        def on_new_investigation: () -> void
+
+        def on_investigation_end: () -> void
+
         # @rbs node: RuboCop::AST::BlockNode
         def on_block: (RuboCop::AST::BlockNode node) -> void
 
         private
+
+        attr_reader contexts: Array[Hash[Symbol, untyped]]
 
         # Only the block's own top-level statements count, and only those
         # that are themselves `context`-family blocks — same
@@ -126,6 +136,11 @@ module RuboCop
         # @rbs node: RuboCop::AST::BlockNode
         # @rbs siblings: Array[RuboCop::AST::BlockNode]
         def check_each_sibling: (RuboCop::AST::BlockNode node, Array[RuboCop::AST::BlockNode] siblings) -> void
+
+        # Runs once per file, after every sibling group has been visited:
+        # turns the collected contexts into a single `jev_probabilities`
+        # call, then walks the results back onto their own target contexts.
+        def check_contexts: () -> void
 
         # @rbs target: RuboCop::AST::BlockNode
         # @rbs others: Array[RuboCop::AST::BlockNode]

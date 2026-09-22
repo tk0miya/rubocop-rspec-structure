@@ -47,15 +47,32 @@ module RuboCop
 
         @heuristic: RuboCop::RSpec::Structure::ConditionHeuristic
 
+        # Every description this cop wants Jev's semantic judgment on is
+        # collected here instead of asked about immediately, so the whole
+        # file's worth of them can go out as a single batched call — see
+        # `check_descriptions`, called once this file's traversal
+        # finishes.
+        def on_new_investigation: () -> void
+
+        def on_investigation_end: () -> void
+
         # @rbs node: RuboCop::AST::BlockNode
         def on_block: (RuboCop::AST::BlockNode node) -> void
 
         private
 
+        attr_reader descriptions: Array[Hash[Symbol, untyped]]
+
         # @rbs block_node: RuboCop::AST::BlockNode
         # @rbs description_node: RuboCop::AST::StrNode
         # @rbs text: String
         def check: (RuboCop::AST::BlockNode block_node, RuboCop::AST::StrNode description_node, String text) -> void
+
+        # Runs once per file, after every `it`/`example` has been visited:
+        # turns the collected descriptions into a single `jev_probabilities`
+        # call, then walks the results back onto their own description
+        # nodes.
+        def check_descriptions: () -> void
 
         # @rbs node: RuboCop::AST::Node
         def out_of_scope?: (RuboCop::AST::Node node) -> bool

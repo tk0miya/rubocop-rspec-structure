@@ -23,18 +23,21 @@ module RuboCop
             @store = load_store
           end
 
-          # @rbs state: String
-          # @rbs instructions: String
-          # @rbs criteria: Hash[String, String]?
-          def noul(state:, instructions:, criteria: nil) #: Float
-            key = cache_key(state:, instructions:, criteria:)
+          # Cache-aware batch lookup: items already on disk are served
+          # without touching the client at all, and only the misses go
+          # out, together, as a single call to `client.nouls`. Each item
+          # is still cached under its own (state, instructions, criteria,
+          # model) key — the batching is purely a transport-level detail
+          # the cache itself doesn't need to know about.
+          # @rbs items: Array[Hash[Symbol, untyped]]
+          def nouls(items) #: Hash[String, Float]
+            hits, misses = split_hits_and_misses(items)
+            return hits if misses.empty?
 
-            return store.fetch(key) if store.key?(key)
+            fetched = client.nouls(misses)
+            store_fetched(misses, fetched)
 
-            probability = client.noul(state:, instructions:, criteria:)
-            store[key] = probability
-            save_store
-            probability
+            hits.merge(fetched)
           end
 
           private
@@ -62,6 +65,39 @@ module RuboCop
           # @rbs criteria: Hash[String, String]?
           def cache_key(state:, instructions:, criteria:) #: String
             Digest::SHA256.hexdigest(JSON.generate({ state:, instructions:, criteria:, model: }))
+          end
+
+          # Looks up each item in the on-disk store. A hit resolves
+          # straight to its cached probability; a miss carries its
+          # (not-yet-looked-up) cache key forward, since `store_fetched`
+          # will need it once the client answers. The two aren't the same
+          # shape — a hit is already a final `{id => probability}` value,
+          # a miss is still the original item plus that key — so this
+          # isn't a same-type partition, just a single pass over `items`
+          # that buckets each one into whichever of the two it resolves
+          # to.
+          # @rbs items: Array[Hash[Symbol, untyped]]
+          def split_hits_and_misses(items) #: [Hash[String, Float], Array[Hash[Symbol, untyped]]]
+            hits = {} #: Hash[String, Float]
+            misses = [] #: Array[Hash[Symbol, untyped]]
+
+            items.each do |item|
+              key = cache_key(state: item[:state], instructions: item[:instructions], criteria: item[:criteria])
+              if store.key?(key)
+                hits[item[:id]] = store.fetch(key)
+              else
+                misses << item.merge(cache_key: key)
+              end
+            end
+
+            [hits, misses]
+          end
+
+          # @rbs misses: Array[Hash[Symbol, untyped]]
+          # @rbs fetched: Hash[String, Float]
+          def store_fetched(misses, fetched) #: void
+            misses.each { store[_1[:cache_key]] = fetched.fetch(_1[:id]) }
+            save_store
           end
 
           # A Jev judgment is a pure function of (state, instructions,

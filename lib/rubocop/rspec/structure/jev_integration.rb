@@ -3,10 +3,18 @@
 module RuboCop
   module RSpec
     module Structure
-      # Asking Jev a single yes/no question and getting back a calibrated
-      # probability: building the API client (optionally cache-wrapped),
+      # Asking Jev a batch of yes/no questions and getting back calibrated
+      # probabilities: building the API client (optionally cache-wrapped),
       # resolving the API key/model/cache path from config or environment,
       # and turning a client error into whatever `OnJevError` asks for.
+      #
+      # `jev_probabilities` is a plain, synchronous bulk call — it neither
+      # collects questions nor decides when a file's worth of them is
+      # ready. Collecting candidates during the AST walk and deciding when
+      # to flush them (typically from the cop's own `on_investigation_end`)
+      # is the including cop's job, so that a cop's control flow is
+      # readable from the cop alone, without tracing into this mixin to
+      # see when an API call actually happens.
       #
       # `check_scope`/`diff_scope` (whether a node is worth the cost of an
       # API call at all) are a separate responsibility — see
@@ -20,17 +28,24 @@ module RuboCop
 
         private
 
-        # @rbs state: String
-        # @rbs instructions: String
-        # @rbs criteria: Hash[String, String]?
-        def jev_probability(state, instructions:, criteria: nil) #: Float?
-          api_key = type_safe_api_key
-          return nil unless api_key
+        # Resolves a batch of independent Noul questions in one call. Each
+        # item is `{id:, state:, instructions:, criteria:}`; the result is
+        # a `{id => probability}` hash. Returns `{}` without touching the
+        # client at all when there's no API key configured, or when the
+        # call errors and `OnJevError` doesn't re-raise — the caller can't
+        # tell those two "no answer" cases apart, by design: either way,
+        # there's nothing to do but skip.
+        # @rbs items: Array[Hash[Symbol, untyped]]
+        def jev_probabilities(items) #: Hash[String, Float]
+          return {} if items.empty?
 
-          type_safe_client(api_key).noul(state:, instructions:, criteria:)
+          api_key = type_safe_api_key
+          return {} unless api_key
+
+          type_safe_client(api_key).nouls(items)
         rescue RuboCop::RSpec::Structure::TypeSafe::Error => e
           handle_jev_error(e)
-          nil
+          {}
         end
 
         # @rbs error: StandardError
