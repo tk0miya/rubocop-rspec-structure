@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "digest"
 require "fileutils"
 require "json"
 
@@ -29,7 +28,7 @@ module RuboCop
           # is still cached under its own (state, instructions, criteria,
           # model) key — the batching is purely a transport-level detail
           # the cache itself doesn't need to know about.
-          # @rbs items: Array[Hash[Symbol, untyped]]
+          # @rbs items: Array[NoulQuestion]
           def nouls(items) #: Hash[String, Float]
             hits, misses = split_hits_and_misses(items)
             return hits if misses.empty?
@@ -60,43 +59,40 @@ module RuboCop
             File.write(path, JSON.generate(store))
           end
 
-          # @rbs state: String
-          # @rbs instructions: String
-          # @rbs criteria: Hash[String, String]?
-          def cache_key(state:, instructions:, criteria:) #: String
-            Digest::SHA256.hexdigest(JSON.generate({ state:, instructions:, criteria:, model: }))
+          # Folds `model` into an item's own (model-independent) cache key:
+          # the same question asked of two different Jev models is two
+          # different cache entries.
+          # @rbs item: NoulQuestion
+          def cache_key(item) #: String
+            "#{model}:#{item.cache_key}"
           end
 
           # Looks up each item in the on-disk store. A hit resolves
-          # straight to its cached probability; a miss carries its
-          # (not-yet-looked-up) cache key forward, since `store_fetched`
-          # will need it once the client answers. The two aren't the same
-          # shape — a hit is already a final `{id => probability}` value,
-          # a miss is still the original item plus that key — so this
-          # isn't a same-type partition, just a single pass over `items`
-          # that buckets each one into whichever of the two it resolves
-          # to.
-          # @rbs items: Array[Hash[Symbol, untyped]]
-          def split_hits_and_misses(items) #: [Hash[String, Float], Array[Hash[Symbol, untyped]]]
+          # straight to its cached probability; a miss is simply the item
+          # itself — `store_fetched` recomputes its cache key once the
+          # client answers, which costs far less than the API call a miss
+          # is about to make anyway.
+          # @rbs items: Array[NoulQuestion]
+          def split_hits_and_misses(items) #: [Hash[String, Float], Array[NoulQuestion]]
             hits = {} #: Hash[String, Float]
-            misses = [] #: Array[Hash[Symbol, untyped]]
+            misses = [] #: Array[NoulQuestion]
 
             items.each do |item|
-              key = cache_key(state: item[:state], instructions: item[:instructions], criteria: item[:criteria])
+              key = cache_key(item)
               if store.key?(key)
-                hits[item[:id]] = store.fetch(key)
+                hits[item.id] = store.fetch(key)
               else
-                misses << item.merge(cache_key: key)
+                misses << item
               end
             end
 
             [hits, misses]
           end
 
-          # @rbs misses: Array[Hash[Symbol, untyped]]
+          # @rbs misses: Array[NoulQuestion]
           # @rbs fetched: Hash[String, Float]
           def store_fetched(misses, fetched) #: void
-            misses.each { store[_1[:cache_key]] = fetched.fetch(_1[:id]) }
+            misses.each { store[cache_key(_1)] = fetched.fetch(_1.id) }
             save_store
           end
 

@@ -28,15 +28,14 @@ module RuboCop
 
         private
 
-        # Resolves a batch of independent Noul questions in one call. Each
-        # item is `{id:, state:, instructions:, criteria:}`; the result is
-        # a `{id => probability}` hash. Returns `{}` when there's no API
-        # key configured — `type_safe_client` hands back a `NullClient`
-        # rather than ever touching the network — or when the call errors
-        # and `OnJevError` doesn't re-raise. The caller can't tell those
-        # two "no answer" cases apart, by design: either way, there's
-        # nothing to do but skip.
-        # @rbs items: Array[Hash[Symbol, untyped]]
+        # Resolves a batch of independent Noul questions in one call. The
+        # result is a `{id => probability}` hash. Returns `{}` when there's
+        # no API key configured — `type_safe_client` hands back a
+        # `NullClient` rather than ever touching the network — or when the
+        # call errors and `OnJevError` doesn't re-raise. The caller can't
+        # tell those two "no answer" cases apart, by design: either way,
+        # there's nothing to do but skip.
+        # @rbs items: Array[RuboCop::RSpec::Structure::TypeSafe::NoulQuestion]
         def jev_probabilities(items) #: Hash[String, Float]
           return {} if items.empty?
 

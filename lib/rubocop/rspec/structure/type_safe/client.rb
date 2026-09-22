@@ -45,12 +45,12 @@ module RuboCop
           # independently verified against the live API by this gem, so
           # treat it as the working assumption behind this method, not a
           # guarantee.
-          # @rbs items: Array[Hash[Symbol, untyped]]
+          # @rbs items: Array[NoulQuestion]
           def nouls(items) #: Hash[String, Float]
             return {} if items.empty?
 
             response = post(batch_request_body(items))
-            items.to_h { [_1[:id], extract_probability(response, _1[:id])] }
+            items.to_h { [_1.id, extract_probability(response, _1.id)] }
           end
 
           private
@@ -59,21 +59,21 @@ module RuboCop
           attr_reader :model #: String
           attr_reader :timeout #: Integer
 
-          # @rbs items: Array[Hash[Symbol, untyped]]
+          # @rbs items: Array[NoulQuestion]
           def batch_request_body(items) #: Hash[Symbol, untyped]
             {
               state: "",
               model:,
-              questions: items.to_h { [_1[:id], batched_question(_1)] }
+              questions: items.to_h { [_1.id, batched_question(_1)] }
             }
           end
 
-          # @rbs item: Hash[Symbol, untyped]
+          # @rbs item: NoulQuestion
           def batched_question(item) #: Hash[Symbol, untyped]
             {
               type: "noul",
-              instructions: "#{item[:instructions]}\n\n---\nState:\n#{item[:state]}",
-              criteria: item[:criteria]
+              instructions: "#{item.instructions}\n\n---\nState:\n#{item.state}",
+              criteria: item.criteria
             }.compact
           end
 

@@ -7,9 +7,13 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Cache do
   let(:cache_path) { File.join(tmpdir, "jev_cache.json") }
   let(:tmpdir) { Dir.mktmpdir }
   let(:cache) { described_class.new(client: inner_client, model: "jev-latest", path: cache_path) }
-  let(:item) { { id: "a", state: "when the user is an admin", instructions: "instructions", criteria: nil } }
+  let(:item) { noul_question(id: "a", state: "when the user is an admin", instructions: "instructions", criteria: nil) }
 
   after { FileUtils.remove_entry(tmpdir) }
+
+  def noul_question(**attrs)
+    RuboCop::RSpec::Structure::TypeSafe::NoulQuestion.new(**attrs)
+  end
 
   describe "#nouls" do
     context "when there is a cache miss" do
@@ -46,8 +50,8 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Cache do
       it "delegates all of them to the client" do
         probabilities = cache.nouls(
           [
-            { id: "a", state: "state a", instructions: "instructions", criteria: nil },
-            { id: "b", state: "state b", instructions: "instructions", criteria: nil }
+            noul_question(id: "a", state: "state a", instructions: "instructions", criteria: nil),
+            noul_question(id: "b", state: "state b", instructions: "instructions", criteria: nil)
           ]
         )
 
@@ -59,13 +63,13 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Cache do
     context "when the client can prove how many times it was called" do
       it "passes every miss to a single call to the client's #nouls" do
         spy_client = instance_double(RuboCop::RSpec::Structure::TypeSafe::Client)
-        allow(spy_client).to receive(:nouls) { |items| items.to_h { [_1[:id], 0.8] } }
+        allow(spy_client).to receive(:nouls) { |items| items.to_h { [_1.id, 0.8] } }
         cache_with_spy = described_class.new(client: spy_client, model: "jev-latest", path: cache_path)
 
         cache_with_spy.nouls(
           [
-            { id: "a", state: "state a", instructions: "instructions", criteria: nil },
-            { id: "b", state: "state b", instructions: "instructions", criteria: nil }
+            noul_question(id: "a", state: "state a", instructions: "instructions", criteria: nil),
+            noul_question(id: "b", state: "state b", instructions: "instructions", criteria: nil)
           ]
         )
 
@@ -75,12 +79,12 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Cache do
 
     context "when some items are already cached" do
       it "only sends the misses to the client" do
-        cache.nouls([{ id: "a", state: "state a", instructions: "instructions", criteria: nil }])
+        cache.nouls([noul_question(id: "a", state: "state a", instructions: "instructions", criteria: nil)])
 
         probabilities = cache.nouls(
           [
-            { id: "a", state: "state a", instructions: "instructions", criteria: nil },
-            { id: "b", state: "state b", instructions: "instructions", criteria: nil }
+            noul_question(id: "a", state: "state a", instructions: "instructions", criteria: nil),
+            noul_question(id: "b", state: "state b", instructions: "instructions", criteria: nil)
           ]
         )
 
@@ -91,14 +95,14 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Cache do
 
     context "when every item is already cached" do
       it "returns the cached results without calling the client" do
-        cache.nouls([{ id: "a", state: "state a", instructions: "instructions", criteria: nil }])
-        cache.nouls([{ id: "b", state: "state b", instructions: "instructions", criteria: nil }])
+        cache.nouls([noul_question(id: "a", state: "state a", instructions: "instructions", criteria: nil)])
+        cache.nouls([noul_question(id: "b", state: "state b", instructions: "instructions", criteria: nil)])
         inner_client.calls.clear
 
         probabilities = cache.nouls(
           [
-            { id: "a", state: "state a", instructions: "instructions", criteria: nil },
-            { id: "b", state: "state b", instructions: "instructions", criteria: nil }
+            noul_question(id: "a", state: "state a", instructions: "instructions", criteria: nil),
+            noul_question(id: "b", state: "state b", instructions: "instructions", criteria: nil)
           ]
         )
 

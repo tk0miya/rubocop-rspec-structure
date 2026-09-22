@@ -11,7 +11,7 @@ module RuboCop
         class NullClient
           # rubocop:disable Lint/UnusedMethodArgument
 
-          # @rbs items: Array[Hash[Symbol, untyped]]
+          # @rbs items: Array[NoulQuestion]
           def nouls(items) #: Hash[String, Float]
             {}
           end

@@ -2,6 +2,7 @@
 
 require_relative "structure/version"
 require_relative "structure/type_safe/error"
+require_relative "structure/type_safe/noul_question"
 require_relative "structure/type_safe/client"
 require_relative "structure/type_safe/cache"
 require_relative "structure/type_safe/null_client"

@@ -177,7 +177,7 @@ RSpec.describe RuboCop::Cop::RSpecStructure::AsymmetricContexts, :config do
               # Only the first line names the target being judged; "payment succeeds"
               # would also appear on a later line when it's listed as someone else's
               # sibling, so checking the whole state would wrongly match both targets.
-              [item[:id], item[:state].lines.first.include?("payment succeeds") ? 0.9 : 0.1]
+              [item.id, item.state.lines.first.include?("payment succeeds") ? 0.9 : 0.1]
             end
           end
 
@@ -198,7 +198,7 @@ RSpec.describe RuboCop::Cop::RSpecStructure::AsymmetricContexts, :config do
         it "batches them into a single call to the client's #nouls" do
           client = instance_double(RuboCop::RSpec::Structure::TypeSafe::Client)
           allow(RuboCop::RSpec::Structure::TypeSafe::Client).to receive(:new).and_return(client)
-          allow(client).to receive(:nouls) { |items| items.to_h { [_1[:id], 0.9] } }
+          allow(client).to receive(:nouls) { |items| items.to_h { [_1.id, 0.9] } }
 
           expect_offense(<<~RUBY)
             describe "#dashboard" do
