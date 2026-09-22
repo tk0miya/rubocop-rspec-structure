@@ -5,9 +5,7 @@ module RuboCop
     module Structure
       # A single, generic responsibility: resolve a config value that can
       # also be overridden by an environment variable, which always wins
-      # when set. Shared by `JevIntegration` (`CachePath`) and
-      # `DiffScoping` (`CheckScope`/`DiffBase`), which otherwise have
-      # nothing to do with each other.
+      # when set. Used by `DiffScoping` (`CheckScope`/`DiffBase`).
       # @rbs module-self RuboCop::Cop::Base
       module ConfigOverride : RuboCop::Cop::Base
         private
