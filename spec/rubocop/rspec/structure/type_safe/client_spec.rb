@@ -31,7 +31,7 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Client do
 
     context "when the response is successful" do
       it "returns the probability keyed by id" do
-        response = instance_double(Net::HTTPSuccess, body: '{"nouls":{"result":{"noul":0.73}}}')
+        response = instance_double(Net::HTTPSuccess, body: '{"answers":{"result":{"noul":0.73}}}')
         allow(response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
         allow(http).to receive(:request).and_return(response)
 
@@ -81,7 +81,7 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Client do
 
     context "with several items" do
       it "returns each item's probability keyed by its id" do
-        body = '{"nouls":{"a":{"noul":0.3},"b":{"noul":0.9}}}'
+        body = '{"answers":{"a":{"noul":0.3},"b":{"noul":0.9}}}'
         response = instance_double(Net::HTTPSuccess, body:)
         allow(response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
         allow(http).to receive(:request).and_return(response)
@@ -99,7 +99,7 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Client do
 
     context "with an item whose state is meant to be checked in isolation" do
       it "sends one request with each item's state folded into its own instructions" do
-        response = instance_double(Net::HTTPSuccess, body: '{"nouls":{"a":{"noul":0.3}}}')
+        response = instance_double(Net::HTTPSuccess, body: '{"answers":{"a":{"noul":0.3}}}')
         allow(response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
         request = instance_double(Net::HTTP::Post)
         allow(Net::HTTP::Post).to receive(:new).and_return(request)
@@ -118,7 +118,7 @@ RSpec.describe RuboCop::RSpec::Structure::TypeSafe::Client do
 
     context "when the response is missing an item's field" do
       it "raises RequestError" do
-        response = instance_double(Net::HTTPSuccess, body: '{"nouls":{"a":{"noul":0.3}}}')
+        response = instance_double(Net::HTTPSuccess, body: '{"answers":{"a":{"noul":0.3}}}')
         allow(response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
         allow(http).to receive(:request).and_return(response)
 
