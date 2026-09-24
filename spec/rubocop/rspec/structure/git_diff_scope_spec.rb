@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
+require "etc"
 require "tmpdir"
 
 RSpec.describe RuboCop::RSpec::Structure::GitDiffScope do
   around do |example|
-    Dir.mktmpdir do |dir|
+    Dir.mktmpdir(nil, writable_tmpdir) do |dir|
       Dir.chdir(File.realpath(dir)) { example.run }
     end
   end
@@ -21,6 +22,18 @@ RSpec.describe RuboCop::RSpec::Structure::GitDiffScope do
 
   def run_git(args)
     system("git #{args}", out: File::NULL, err: File::NULL, exception: true)
+  end
+
+  # Dir.tmpdir can resolve to an unwritable path in some sandboxed
+  # environments, which makes Dir.mktmpdir silently fall back to the
+  # current directory instead. Try known-writable candidates first, in the
+  # same order Dir.tmpdir itself tries them; CLAUDE_CODE_TMPDIR is set by
+  # Claude Code's sandbox.
+  def writable_tmpdir
+    [
+      ENV.fetch("TMPDIR", nil), ENV.fetch("CLAUDE_CODE_TMPDIR", nil), ENV.fetch("TMP", nil),
+      Etc.systmpdir, "/tmp", Dir.pwd
+    ].compact.find { File.writable?(_1) } || Dir.tmpdir
   end
 
   context "when nothing changed" do
