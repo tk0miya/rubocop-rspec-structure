@@ -93,44 +93,47 @@ module RuboCop
           "`context` for the complementary case, or move existing coverage of it " \
           "into this tree."
 
+        # Judges the target and each sibling against the same axis, checked
+        # symmetrically in both directions: swapping which of two sibling
+        # contexts is labeled TARGET must not change the verdict, since a
+        # real asymmetry (or the lack of one) doesn't depend on that
+        # labeling.
         JEV_INSTRUCTIONS =
           "The state describes one `context` block (the TARGET) and lists its sibling " \
           "`context` blocks, all nested directly under the same parent group in an " \
-          "RSpec spec file. Judge whether the target implies some externally observable " \
-          "behavioral condition (e.g. a boolean state, an enum value, a success/failure " \
-          "outcome) for which NO sibling — individually or collectively — represents " \
-          "the natural complementary/opposite branch of that same condition. A sibling " \
-          "satisfies the complement even if it isn't an exact mirror of the target's " \
-          "wording (e.g. a general 'invalid input' sibling can satisfy the complement " \
-          "of a specific 'valid input' target; several distinct failure-mode siblings " \
-          "can jointly satisfy the complement of one 'succeeds' target). Do not " \
-          "require an exact one-to-one phrasing match — judge by whether the " \
-          "outcome/condition space is actually covered somewhere among the siblings. " \
-          "Answer yes only when the complementary branch is truly absent, not merely " \
-          "phrased differently or split across siblings. Answer no when: the target " \
-          "has no clear complementary branch to begin with (a standalone scenario, one " \
-          "implementation variant among several non-exclusive options, or an outcome " \
-          "elaboration with no condition); or the target is one case in a larger " \
-          "enumeration where at least one other value of the same axis is already " \
-          "present (a 3+-value enum with only 2 values tested is a coverage/" \
-          "completeness question, out of scope here, not asymmetry). Base your " \
-          "judgment only on externally observable behavior implied by the wording, " \
-          "never on internal implementation details you cannot see."
+          "RSpec spec file. First decide whether the target varies on a real, " \
+          "externally observable property that the behavior actually depends on, " \
+          "rather than being incidental setup or fixture detail with no behavioral " \
+          "branch of its own (e.g. which factory helper built a record). If the " \
+          "target is such a detail, answer no immediately. Otherwise, name the " \
+          "target's property/axis (e.g. login status, payment outcome, file format) " \
+          "and the value it takes on that axis, then check every sibling for a " \
+          "DIFFERENT value on that SAME axis. A sibling satisfies this even if it " \
+          "isn't an exact mirror of the target's wording — a strict opposite (valid " \
+          "vs invalid) counts, and so does any other value of a multi-valued " \
+          "property (a different file format, a different role). If some sibling " \
+          "names another value on the same axis, the axis is already represented in " \
+          "this group — answer no, regardless of whether that sibling is the exact " \
+          "opposite. Answer yes only if no sibling touches the target's axis at " \
+          "all. Apply this symmetrically: swapping which of two contexts is labeled " \
+          "TARGET must yield the same answer for both, since both are checked " \
+          "against the same axis. Examples: target 'with a valid coupon', sibling " \
+          "'as a first-time buyer' — different axes (coupon validity vs customer " \
+          "tenure), neither touches the other's axis, so yes for both directions. " \
+          "target 'when the file type is CSV', sibling 'when the file type is " \
+          "JSON' — the same axis (file format), with the sibling naming a " \
+          "different value on it, so no for both directions. target 'using the " \
+          "factory-built default user', sibling 'when rate limiting is enabled' — " \
+          "the first is setup detail with no real axis (no); the second is a real " \
+          "condition untouched by that detail (yes)."
 
         JEV_CRITERIA = {
-          "true" => "The target implies an externally observable condition with a " \
-                    "natural complementary/opposite branch (success vs failure, " \
-                    "present vs absent, logged-in vs not logged-in, valid vs invalid), " \
-                    "and no sibling, alone or together, represents that complementary " \
-                    "branch even loosely.",
-          "false" => "Either (a) some sibling, or some combination of siblings, " \
-                     "already represents the target's complementary branch (even if " \
-                     "phrased differently, or split into several more specific " \
-                     "siblings), or (b) the target doesn't clearly imply a binary/" \
-                     "complementary condition in the first place (a standalone " \
-                     "scenario, a named variant among parallel implementation " \
-                     "choices, or one already-represented value within a larger " \
-                     "multi-value enumeration)."
+          "true" => "The target varies on a real, externally observable behavioral " \
+                    "axis, and no sibling names another value on that same axis.",
+          "false" => "Either the target is only setup/fixture detail with no real " \
+                     "behavioral axis of its own, or some sibling names another " \
+                     "value — loosely worded is fine — on the same axis the " \
+                     "target varies on."
         }.freeze
 
         # Literal method-name match, independent of `RSpec::Language`

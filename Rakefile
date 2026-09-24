@@ -41,3 +41,11 @@ desc "Run steep type check"
 task steep: "rbs:install" do
   sh "bundle exec steep check"
 end
+
+namespace :benchmark do
+  desc "Check AsymmetricContexts' JEV prompt against its benchmark dataset " \
+       "(manual; needs TYPESAFE_API_KEY, costs money; see benchmark/README.md)"
+  task :asymmetric_contexts do
+    ruby "benchmark/asymmetric_contexts.rb"
+  end
+end

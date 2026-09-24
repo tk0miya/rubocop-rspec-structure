@@ -87,6 +87,11 @@ module RuboCop
 
         MSG_ASYMMETRIC: ::String
 
+        # Judges the target and each sibling against the same axis, checked
+        # symmetrically in both directions: swapping which of two sibling
+        # contexts is labeled TARGET must not change the verdict, since a
+        # real asymmetry (or the lack of one) doesn't depend on that
+        # labeling.
         JEV_INSTRUCTIONS: ::String
 
         JEV_CRITERIA: untyped
