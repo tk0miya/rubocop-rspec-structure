@@ -12,7 +12,12 @@ module RuboCop
       # process (memoized by resolved base) and is shared by every cop
       # instance, since RuboCop instantiates a cop per file.
       class GitDiffScope
-        FILE_HEADER = %r{\A\+\+\+ b/(.+)\z}
+        # Doesn't require the match to be a genuine "+++" header rather than a
+        # hunk body line that coincidentally reads the same way: an added
+        # source line that itself starts with "++ " renders as "+++ ..." once
+        # diffed. Ruby source has no "++" operator, so that false match is not
+        # a real-world concern.
+        FILE_HEADER = /\A\+\+\+ (.+)\z/
         HUNK_HEADER = /\A@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/
 
         # @rbs @git_root: String
@@ -96,7 +101,11 @@ module RuboCop
         # contains. Treat every line of an untracked file as changed.
         # @rbs base: String
         def compute_diff(base) #: Hash[String, (Array[Integer] | Symbol)]
-          diff, status = Open3.capture2("git", "diff", "--unified=0", "--no-color", base)
+          # --no-prefix: FILE_HEADER expects a bare path. Without it, a user's
+          # `diff.mnemonicPrefix` (or similar) config could change the "+++ "
+          # line's prefix (e.g. "w/" instead of "b/"), leaving every file
+          # silently unmatched.
+          diff, status = Open3.capture2("git", "diff", "--unified=0", "--no-color", "--no-prefix", base)
           # Open3 tags the captured string with Encoding.default_external, which is not
           # necessarily UTF-8 (e.g. a plain "C"/"POSIX" locale reports US-ASCII), so a diff
           # containing multibyte content would otherwise raise ArgumentError the moment a

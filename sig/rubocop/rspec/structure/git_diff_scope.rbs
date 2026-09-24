@@ -9,6 +9,11 @@ module RuboCop
       # process (memoized by resolved base) and is shared by every cop
       # instance, since RuboCop instantiates a cop per file.
       class GitDiffScope
+        # Doesn't require the match to be a genuine "+++" header rather than a
+        # hunk body line that coincidentally reads the same way: an added
+        # source line that itself starts with "++ " renders as "+++ ..." once
+        # diffed. Ruby source has no "++" operator, so that false match is not
+        # a real-world concern.
         FILE_HEADER: ::Regexp
 
         HUNK_HEADER: ::Regexp

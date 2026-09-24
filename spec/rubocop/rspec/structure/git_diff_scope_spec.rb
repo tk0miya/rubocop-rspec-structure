@@ -42,6 +42,18 @@ RSpec.describe RuboCop::RSpec::Structure::GitDiffScope do
     end
   end
 
+  context "when the user has diff.mnemonicPrefix enabled" do
+    it "still reports the new line numbers touched" do
+      run_git("config diff.mnemonicPrefix true")
+      File.write("a.rb", "line1\nCHANGED\n")
+
+      scope = described_class.for(diff_base: "HEAD")
+
+      expect(scope.changed?(File.expand_path("a.rb"), 2)).to be(true)
+      expect(scope.changed?(File.expand_path("a.rb"), 1)).to be(false)
+    end
+  end
+
   context "when the file is new and not yet added" do
     it "treats every line as changed" do
       File.write("new_spec.rb", "line1\nline2\nline3\n")
